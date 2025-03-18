@@ -3,45 +3,63 @@ import heapq
 import time
 from collections import deque
 
-WIDTH, HEIGHT = 600, 750
+WIDTH, HEIGHT = 800, 800
 ROWS, COLS = 3, 3
-TILE_SIZE = WIDTH // COLS
+TILE_SIZE = WIDTH // (COLS + 3)  # Giảm kích thước ô
 BUTTON_HEIGHT = 100
 INFO_HEIGHT = 50
 
 start_state = [[2, 6, 5], [8, 7, 0], [4, 3, 1]]
 goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
+def sort_start_state():
+    global start_state
+    flat_list = sorted(sum(start_state, []))
+    flat_list.remove(0)
+    flat_list.append(0)
+    
+    temp_state = sum(start_state, [])  # Lấy danh sách phẳng của trạng thái ban đầu
+    
+    for i in range(len(temp_state)):  # Duyệt qua từng phần tử để sắp xếp chậm
+        temp_state[i] = flat_list[i]
+        start_state = [temp_state[j * COLS:(j + 1) * COLS] for j in range(ROWS)]
+        
+        win.fill((255, 255, 255))
+        draw_grid(start_state, 30, "Start")
+        draw_grid(goal_state, WIDTH // 2 + 30, "Goal")
+        draw_buttons()  
+        pygame.display.flip()
+        time.sleep(0.3)  # Tạo hiệu ứng chậm (0.3 giây mỗi bước)
+
+
 pygame.init()
 win = pygame.display.set_mode((WIDTH, HEIGHT))
-font = pygame.font.SysFont(None, 100)
-button_font = pygame.font.SysFont(None, 50)
-info_font = pygame.font.SysFont(None, 30)
+font = pygame.font.SysFont(None, 60, bold=True)  # Giảm kích thước chữ
+button_font = pygame.font.SysFont(None, 30, bold=True)
+info_font = pygame.font.SysFont(None, 30, bold=True)
 
-def draw_grid(state, time_elapsed, nodes_visited):
-    win.fill((255, 255, 255))
+def draw_grid(state, x_offset, label):
+    pygame.draw.rect(win, (220, 220, 220), (x_offset, 0, WIDTH // 2, HEIGHT - BUTTON_HEIGHT))
+    text_label = font.render(str(label), True, (0, 0, 0))
+    win.blit(text_label, (x_offset + TILE_SIZE, 10))
     for r in range(ROWS):
         for c in range(COLS):
             if state[r][c] != 0:
-                pygame.draw.rect(win, (0, 0, 255), (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                pygame.draw.rect(win, (0, 0, 255), (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE), border_radius=10)
                 text = font.render(str(state[r][c]), True, (255, 255, 255))
-                win.blit(text, (c * TILE_SIZE + TILE_SIZE // 3, r * TILE_SIZE + TILE_SIZE // 3))
-            pygame.draw.rect(win, (0, 0, 0), (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE), 3)
+                text_rect = text.get_rect(center=(x_offset + c * TILE_SIZE + TILE_SIZE // 2, r * TILE_SIZE + 50 + TILE_SIZE // 2))
+                win.blit(text, text_rect)
+            pygame.draw.rect(win, (0, 0, 0), (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE), 3, border_radius=10)
     
-    info_text = f"Time: {time_elapsed:.4f} sec | Nodes: {nodes_visited}"
-    win.blit(info_font.render(info_text, True, (0, 0, 0)), (20, HEIGHT - BUTTON_HEIGHT - INFO_HEIGHT))
-    pygame.display.flip()
-
 def draw_buttons():
-    pygame.draw.rect(win, (200, 0, 0), (0, HEIGHT - BUTTON_HEIGHT, WIDTH // 4, BUTTON_HEIGHT))
-    pygame.draw.rect(win, (0, 200, 0), (WIDTH // 4, HEIGHT - BUTTON_HEIGHT, WIDTH // 4, BUTTON_HEIGHT))
-    pygame.draw.rect(win, (0, 0, 200), (2 * WIDTH // 4, HEIGHT - BUTTON_HEIGHT, WIDTH // 4, BUTTON_HEIGHT))
-    pygame.draw.rect(win, (200, 200, 0), (3 * WIDTH // 4, HEIGHT - BUTTON_HEIGHT, WIDTH // 4, BUTTON_HEIGHT))
-    win.blit(button_font.render("DFS", True, (255, 255, 255)), (WIDTH // 8 - 20, HEIGHT - BUTTON_HEIGHT + 30))
-    win.blit(button_font.render("BFS", True, (255, 255, 255)), (3 * WIDTH // 8 - 20, HEIGHT - BUTTON_HEIGHT + 30))
-    win.blit(button_font.render("UCS", True, (255, 255, 255)), (5 * WIDTH // 8 - 20, HEIGHT - BUTTON_HEIGHT + 30))
-    win.blit(button_font.render("A*", True, (255, 255, 255)), (7 * WIDTH // 8 - 20, HEIGHT - BUTTON_HEIGHT + 30))
-    pygame.display.flip()
+    button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy"]
+    button_colors = [(200, 0, 0), (0, 200, 0), (0, 0, 200), (200, 200, 0), (200, 0, 200), (0, 200, 200)]
+    for i, label in enumerate(button_labels):
+        pygame.draw.rect(win, button_colors[i], (i * (WIDTH // 6), HEIGHT - BUTTON_HEIGHT, WIDTH // 6, BUTTON_HEIGHT), border_radius=10)
+        text_surface = button_font.render(label, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(i * (WIDTH // 6) + (WIDTH // 12), HEIGHT - BUTTON_HEIGHT + 50))
+        win.blit(text_surface, text_rect)
+    pygame.display.update()
 
 def find_zero(state):
     for i, row in enumerate(state):
@@ -119,9 +137,9 @@ def ucs(start, goal):
 
 def heuristic(state):
     return sum(abs(r - goal_r) + abs(c - goal_c) 
-               for r, row in enumerate(state) 
-               for c, val in enumerate(row) 
-               if val and (goal_r := (val - 1) // COLS) is not None and (goal_c := (val - 1) % COLS) is not None)
+            for r, row in enumerate(state) 
+            for c, val in enumerate(row) 
+            if val and (goal_r := (val - 1) // COLS) is not None and (goal_c := (val - 1) % COLS) is not None)
 
 def a_star(start, goal):
     pq = [(heuristic(start), 0, start, [])]
@@ -142,6 +160,51 @@ def a_star(start, goal):
                 heapq.heappush(pq, (cost + step_cost + heuristic(neighbor), cost + step_cost, neighbor, path + [state]))
     return [], time.time() - start_time, nodes_visited
 
+def greedy_best_first(start, goal):
+    pq = [(heuristic(start), start, [])]
+    visited = set()
+    nodes_visited = 0
+    start_time = time.time()
+    while pq:
+        _, state, path = heapq.heappop(pq)
+        nodes_visited += 1
+        if state == goal:
+            return path + [state], time.time() - start_time, nodes_visited
+        state_str = str(state)
+        if state_str in visited:
+            continue
+        visited.add(state_str)
+        for neighbor, _ in get_neighbors(state):
+            if str(neighbor) not in visited:
+                heapq.heappush(pq, (heuristic(neighbor), neighbor, path + [state]))
+    return [], time.time() - start_time, nodes_visited
+
+def dls(state, goal, depth, path, visited):
+    if depth == 0:
+        return None
+    if state == goal:
+        return path + [state]
+    state_str = str(state)
+    if state_str in visited:
+        return None
+    visited.add(state_str)
+    for neighbor, _ in get_neighbors(state):
+        result = dls(neighbor, goal, depth - 1, path + [state], visited)
+        if result:
+            return result
+    return None
+
+def ids(start, goal):
+    depth = 0
+    start_time = time.time()
+    nodes_visited = 0
+    while True:
+        visited = set()
+        result = dls(start, goal, depth, [], visited)
+        nodes_visited += len(visited)
+        if result:
+            return result, time.time() - start_time, nodes_visited
+        depth += 1
 
 def run_algorithm(algorithm, speed):
     solution, _, nodes_visited = algorithm(start_state, goal_state)
@@ -177,3 +240,5 @@ def main():
     pygame.quit()
 
 main()
+
+
