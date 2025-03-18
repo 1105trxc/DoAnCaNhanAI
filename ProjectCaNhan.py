@@ -3,64 +3,68 @@ import heapq
 import time
 from collections import deque
 
-WIDTH, HEIGHT = 800, 800
+WIDTH, HEIGHT = 1500, 800
 ROWS, COLS = 3, 3
-TILE_SIZE = WIDTH // (COLS + 3)  # Giảm kích thước ô
-BUTTON_HEIGHT = 100
-INFO_HEIGHT = 50
+TILE_SIZE = (WIDTH - 200) // (COLS + 4)  # Giảm để dành chỗ cho nút bên trái
+BUTTON_WIDTH = 150
+BUTTON_HEIGHT = 80
 
 start_state = [[2, 6, 5], [8, 7, 0], [4, 3, 1]]
 goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
-def sort_start_state():
-    global start_state
-    flat_list = sorted(sum(start_state, []))
-    flat_list.remove(0)
-    flat_list.append(0)
-    
-    temp_state = sum(start_state, [])  # Lấy danh sách phẳng của trạng thái ban đầu
-    
-    for i in range(len(temp_state)):  # Duyệt qua từng phần tử để sắp xếp chậm
-        temp_state[i] = flat_list[i]
-        start_state = [temp_state[j * COLS:(j + 1) * COLS] for j in range(ROWS)]
-        
-        win.fill((255, 255, 255))
-        draw_grid(start_state, 30, "Start")
-        draw_grid(goal_state, WIDTH // 2 + 30, "Goal")
-        draw_buttons()  
-        pygame.display.flip()
-        time.sleep(0.3)  # Tạo hiệu ứng chậm (0.3 giây mỗi bước)
-
-
 pygame.init()
 win = pygame.display.set_mode((WIDTH, HEIGHT))
-font = pygame.font.SysFont(None, 60, bold=True)  # Giảm kích thước chữ
+font = pygame.font.SysFont(None, 60, bold=True)
 button_font = pygame.font.SysFont(None, 30, bold=True)
 info_font = pygame.font.SysFont(None, 30, bold=True)
 
+# Màu sắc mới
+BG_COLOR = (245, 245, 250)  # Xám nhạt
+TILE_COLOR = (65, 105, 225)  # Xanh hoàng gia
+BORDER_COLOR = (25, 25, 112)  # Xanh đậm
+TEXT_COLOR = (255, 255, 255)  # Trắng
+BUTTON_COLORS = [
+    (255, 87, 87),    # Đỏ nhạt
+    (66, 214, 164),   # Xanh ngọc
+    (255, 159, 67),   # Cam
+    (147, 112, 219),  # Tím trung bình
+    (255, 215, 0),    # Vàng
+    (50, 205, 50)     # Xanh lá
+]
+
 def draw_grid(state, x_offset, label):
-    pygame.draw.rect(win, (220, 220, 220), (x_offset, 0, WIDTH // 2, HEIGHT - BUTTON_HEIGHT))
-    text_label = font.render(str(label), True, (0, 0, 0))
+    # Vẽ nền cho lưới
+    pygame.draw.rect(win, (230, 230, 250), (x_offset, 0, WIDTH // 2, HEIGHT))
+    text_label = font.render(str(label), True, BORDER_COLOR)
     win.blit(text_label, (x_offset + TILE_SIZE, 10))
+    
     for r in range(ROWS):
         for c in range(COLS):
             if state[r][c] != 0:
-                pygame.draw.rect(win, (0, 0, 255), (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE), border_radius=10)
-                text = font.render(str(state[r][c]), True, (255, 255, 255))
-                text_rect = text.get_rect(center=(x_offset + c * TILE_SIZE + TILE_SIZE // 2, r * TILE_SIZE + 50 + TILE_SIZE // 2))
+                pygame.draw.rect(win, TILE_COLOR,
+                               (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE),
+                               border_radius=15)
+                text = font.render(str(state[r][c]), True, TEXT_COLOR)
+                text_rect = text.get_rect(center=(x_offset + c * TILE_SIZE + TILE_SIZE // 2,
+                                                r * TILE_SIZE + 50 + TILE_SIZE // 2))
                 win.blit(text, text_rect)
-            pygame.draw.rect(win, (0, 0, 0), (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE), 3, border_radius=10)
-    
+            pygame.draw.rect(win, BORDER_COLOR,
+                           (x_offset + c * TILE_SIZE, r * TILE_SIZE + 50, TILE_SIZE, TILE_SIZE),
+                           3, border_radius=15)
+
 def draw_buttons():
     button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy"]
-    button_colors = [(200, 0, 0), (0, 200, 0), (0, 0, 200), (200, 200, 0), (200, 0, 200), (0, 200, 200)]
     for i, label in enumerate(button_labels):
-        pygame.draw.rect(win, button_colors[i], (i * (WIDTH // 6), HEIGHT - BUTTON_HEIGHT, WIDTH // 6, BUTTON_HEIGHT), border_radius=10)
-        text_surface = button_font.render(label, True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=(i * (WIDTH // 6) + (WIDTH // 12), HEIGHT - BUTTON_HEIGHT + 50))
+        pygame.draw.rect(win, BUTTON_COLORS[i],
+                        (10, 10 + i * (BUTTON_HEIGHT + 10), BUTTON_WIDTH, BUTTON_HEIGHT),
+                        border_radius=12)
+        text_surface = button_font.render(label, True, TEXT_COLOR)
+        text_rect = text_surface.get_rect(center=(10 + BUTTON_WIDTH // 2,
+                                                10 + i * (BUTTON_HEIGHT + 10) + BUTTON_HEIGHT // 2))
         win.blit(text_surface, text_rect)
     pygame.display.update()
 
+# Các hàm tìm kiếm giữ nguyên như code gốc
 def find_zero(state):
     for i, row in enumerate(state):
         if 0 in row:
@@ -207,38 +211,56 @@ def ids(start, goal):
         depth += 1
 
 def run_algorithm(algorithm, speed):
-    solution, _, nodes_visited = algorithm(start_state, goal_state)
+    win.fill(BG_COLOR)
+    solution, time_taken, nodes_visited = algorithm(start_state, goal_state)
     clock = pygame.time.Clock()
-    start_time = time.time()
+    
     for state in solution:
-        time_elapsed = time.time() - start_time  # Cập nhật thời gian liên tục
+        win.fill(BG_COLOR)
+        draw_grid(state, BUTTON_WIDTH + 30, "Current")
+        draw_grid(goal_state, WIDTH // 2 + BUTTON_WIDTH + 30, "Goal")
+        draw_buttons()
+        pygame.display.flip()
         clock.tick(speed)
-        draw_grid(state, time_elapsed, nodes_visited)
-
+    
+    # Hiển thị thông tin
+    info_text = f"Time: {time_taken:.2f}s | Nodes: {nodes_visited}"
+    info_surface = info_font.render(info_text, True, BORDER_COLOR)
+    win.blit(info_surface, (BUTTON_WIDTH + 40, HEIGHT - 50))
+    pygame.display.flip()
 
 def main():
     run = True
-    speed = 1
-    draw_grid(start_state, 0, 0)
+    speed = 2  # Tăng tốc độ lên một chút
+    
+    win.fill(BG_COLOR)
+    draw_grid(start_state, BUTTON_WIDTH + 30, "Start")
+    draw_grid(goal_state, WIDTH // 2 + BUTTON_WIDTH + 30, "Goal")
     draw_buttons()
+    pygame.display.flip()
+
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if y >= HEIGHT - BUTTON_HEIGHT:
-                    if x < WIDTH // 4:
+                if x < BUTTON_WIDTH:  # Kiểm tra click trong vùng nút
+                    button_index = y // (BUTTON_HEIGHT + 10)
+                    if button_index == 0:
                         run_algorithm(dfs, speed)
-                    elif x < 2 * WIDTH // 4:
+                    elif button_index == 1:
                         run_algorithm(bfs, speed)
-                    elif x < 3 * WIDTH // 4:
+                    elif button_index == 2:
                         run_algorithm(ucs, speed)
-                    else:
+                    elif button_index == 3:
                         run_algorithm(a_star, speed)
-                    draw_buttons()
+                    elif button_index == 4:
+                        run_algorithm(ids, speed)
+                    elif button_index == 5:
+                        run_algorithm(greedy_best_first, speed)
+    
     pygame.quit()
 
-main()
-
-
+if __name__ == "__main__":
+    main()
