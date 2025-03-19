@@ -231,7 +231,7 @@ def run_algorithm(algorithm, speed):
 
 def main():
     run = True
-    speed = 2  # Tăng tốc độ lên một chút
+    speed = 1  # Tăng tốc độ lên một chút
     
     win.fill(BG_COLOR)
     draw_grid(start_state, BUTTON_WIDTH + 30, "Start")
