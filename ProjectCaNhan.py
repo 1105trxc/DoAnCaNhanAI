@@ -34,7 +34,9 @@ BUTTON_COLORS = [
     (50, 205, 50),     # Green
     (255, 69, 0),      # Red
     (0, 191, 255),     # Deep sky blue
-    (255, 20, 147)    # Deep pink
+    (255, 20, 147),    # Deep pink
+    (0, 0, 0) ,
+    (113,218,255)        # Black
 ]
 
 def draw_grid(state, x_offset, y_offset, label, tile_color=TILE_COLOR):
@@ -58,7 +60,7 @@ def draw_grid(state, x_offset, y_offset, label, tile_color=TILE_COLOR):
                            3, border_radius=15)
 
 def draw_buttons():
-    button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy", "IDA*"]
+    button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy", "IDA*", "Simple Hill Climbing","Steepest Ascent Hill Climbing"]
     for i, label in enumerate(button_labels):
         pygame.draw.rect(win, BUTTON_COLORS[i],
                         (10, 10 + i * (BUTTON_HEIGHT + 10), BUTTON_WIDTH, BUTTON_HEIGHT),
@@ -148,6 +150,7 @@ def heuristic(state):
             for r, row in enumerate(state) 
             for c, val in enumerate(row) 
             if val and (goal_r := (val - 1) // COLS) is not None and (goal_c := (val - 1) % COLS) is not None)
+
 #A* = UCS + Greedy
 def a_star(start, goal):
     pq = [(heuristic(start), 0, start, [])]
@@ -255,6 +258,51 @@ def ida_star(start, goal):
             return None, time.time() - start_time, nodes_visited  # Trả về None nếu không tìm thấy đường đi
         threshold = result
 
+def simple_hill_climbing(start, goal):
+    current = start
+    path = [current]  
+    nodes_visited = 0  
+    start_time = time.time()  
+
+    while current != goal:
+        neighbors = get_neighbors(current)  
+        nodes_visited += 1  
+
+        # Tìm trạng thái có heuristic nhỏ nhất
+        next_state = min(neighbors, key=lambda x: heuristic(x[0]), default=None)
+
+        # Nếu không có trạng thái tốt hơn, dừng lại (mắc kẹt)
+        if not next_state or heuristic(next_state[0]) >= heuristic(current):
+            break
+
+        # Di chuyển đến trạng thái tốt hơn
+        current = next_state[0]
+        path.append(current)
+
+    return path, time.time() - start_time, nodes_visited
+
+def steepest_ascent_hill_climbing(start, goal):
+    current = start
+    path = [current]
+    nodes_visited = 0
+    start_time = time.time()
+
+    while current != goal:
+        neighbors = get_neighbors(current)
+        nodes_visited += 1
+
+        # Tìm trạng thái có heuristic nhỏ nhất
+        best_neighbor = min(neighbors, key=lambda x:heuristic(x[0]), default=None)
+
+        # Nếu không có trạng thái tốt hơn, dừng lại (mắc kẹt)
+        if best_neighbor is None or heuristic(best_neighbor[0]) >= heuristic(current):
+            break
+
+        # Di chuyển đến trạng thái tốt nhất
+        current = best_neighbor[0]
+        path.append(current)
+
+    return path, time.time() - start_time, nodes_visited
 
 def run_algorithm(algorithm, speed):
     win.fill(BG_COLOR)
@@ -281,6 +329,36 @@ def run_algorithm(algorithm, speed):
         pygame.display.flip()
         clock.tick(speed)
     
+    # Hiển thị thông tin thuật toán
+    info_text = f"{algorithm.__name__.upper()}|Time: {time_taken:.3f}s|Steps: {len(solution)-1}"
+    info_surface = info_font.render(info_text, True, BORDER_COLOR)
+    win.blit(info_surface, (BUTTON_WIDTH + 30 + TILE_SIZE * 8, TILE_SIZE * 4 + 50))
+    pygame.display.flip()
+def run_algorithm2(algorithm, speed):
+    win.fill(BG_COLOR)
+    result = algorithm(start_state, goal_state)
+
+    if not result or not isinstance(result, tuple) or len(result) < 3 or not result[0]:
+        info_text = f"{algorithm.__name__.upper()}|No Solution Found"
+        info_surface = info_font.render(info_text, True, BORDER_COLOR)
+        win.blit(info_surface, (BUTTON_WIDTH + 30 + TILE_SIZE * 8, TILE_SIZE * 4 + 50))
+        pygame.display.flip()
+        return  # Thoát hàm ngay
+
+    solution, time_taken, nodes_visited = result
+    clock = pygame.time.Clock()
+
+    for state in solution:
+        win.fill(BG_COLOR)
+        # First row: Initial State and Goal State
+        draw_grid(start_state, BUTTON_WIDTH + 30, 0, "Initial State", TILE_COLOR)
+        draw_grid(goal_state, BUTTON_WIDTH + 30 + TILE_SIZE * 4, 0, "Goal State", GOAL_COLOR)
+        # Second row: Current State
+        draw_grid(state, BUTTON_WIDTH + 30, TILE_SIZE * 4, "Current State", GOAL_COLOR)
+        draw_buttons()
+        pygame.display.flip()
+        clock.tick(speed)
+
     # Hiển thị thông tin thuật toán
     info_text = f"{algorithm.__name__.upper()}|Time: {time_taken:.3f}s|Steps: {len(solution)-1}"
     info_surface = info_font.render(info_text, True, BORDER_COLOR)
@@ -322,7 +400,11 @@ def main():
                     elif button_index == 5:
                         run_algorithm(greedy_best_first, speed)
                     elif button_index == 6:
-                        run_algorithm(ida_star, speed)    
+                        run_algorithm(ida_star, speed)   
+                    elif button_index == 7:
+                        run_algorithm2(simple_hill_climbing, speed) 
+                    elif button_index == 8:
+                        run_algorithm2(steepest_ascent_hill_climbing, speed)
     
     pygame.quit()
 
