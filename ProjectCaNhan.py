@@ -2,7 +2,7 @@ import pygame
 import heapq
 import time
 from collections import deque
-
+import random 
 WIDTH, HEIGHT = 1600, 900
 ROWS, COLS = 3, 3
 TILE_SIZE = (WIDTH - 200) // (COLS + 9)  # Space for buttons on the left
@@ -36,7 +36,8 @@ BUTTON_COLORS = [
     (0, 191, 255),     # Deep sky blue
     (255, 20, 147),    # Deep pink
     (0, 0, 0) ,
-    (113,218,255)        # Black
+    (113,218,255),
+    (234,211,200)        # Black
 ]
 
 def draw_grid(state, x_offset, y_offset, label, tile_color=TILE_COLOR):
@@ -60,7 +61,7 @@ def draw_grid(state, x_offset, y_offset, label, tile_color=TILE_COLOR):
                            3, border_radius=15)
 
 def draw_buttons():
-    button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy", "IDA*", "Simple Hill Climbing","Steepest Ascent Hill Climbing"]
+    button_labels = ["DFS", "BFS", "UCS", "A*", "IDS", "Greedy", "IDA*", "Simple Hill Climbing","Steepest Ascent Hill Climbing", "Random Hill Climbing"]
     for i, label in enumerate(button_labels):
         pygame.draw.rect(win, BUTTON_COLORS[i],
                         (10, 10 + i * (BUTTON_HEIGHT + 10), BUTTON_WIDTH, BUTTON_HEIGHT),
@@ -304,6 +305,33 @@ def steepest_ascent_hill_climbing(start, goal):
 
     return path, time.time() - start_time, nodes_visited
 
+def random_hill_climbing(start, goal, max_iterations=1000):
+    current = start
+    path = [current]
+    nodes_visited = 0
+    start_time = time.time()
+
+    while current != goal and max_iterations > 0:
+        neighbors = get_neighbors(current)
+        nodes_visited += 1
+
+        # Nếu không có hàng xóm, dừng lại
+        if not neighbors:
+            break
+
+        # Chọn một hàng xóm có heuristic tốt hơn
+        better_neighbors = [n for n in neighbors if heuristic(n[0]) < heuristic(current)]
+        
+        if better_neighbors:
+            current = random.choice(better_neighbors)[0]  # Chọn ngẫu nhiên từ những trạng thái tốt hơn
+            path.append(current)
+        else:
+            break  # Không có hàng xóm nào tốt hơn => mắc kẹt
+
+        max_iterations -= 1  # Giảm số lần lặp để tránh vòng lặp vô tận
+
+    return path, time.time() - start_time, nodes_visited
+
 def run_algorithm(algorithm, speed):
     win.fill(BG_COLOR)
     result = algorithm(start_state, goal_state)
@@ -405,6 +433,8 @@ def main():
                         run_algorithm2(simple_hill_climbing, speed) 
                     elif button_index == 8:
                         run_algorithm2(steepest_ascent_hill_climbing, speed)
+                    elif button_index == 9:
+                        run_algorithm2(random_hill_climbing, speed)    
     
     pygame.quit()
 
