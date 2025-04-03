@@ -8,7 +8,7 @@ import random
 import threading # To run algorithms without freezing the GUI
 import copy # For deep copying states
 from functools import partial # To pass arguments to button commands
-
+import math
 # --- Core Algorithm Logic ---
 
 ROWS, COLS = 3, 3
@@ -200,7 +200,6 @@ def greedy_best_first(start, goal):
 
     return None, time.time() - start_time, nodes_visited_count # No solution found
 
-# --- IDS Helper ---
 def dls(current_state, goal, depth_limit, path, visited_in_path):
     """Depth Limited Search helper for IDS. visited_in_path tracks nodes in the current path to prevent cycles."""
     current_tuple = state_to_tuple(current_state)
@@ -267,7 +266,6 @@ def ida_star_search(node, g_cost, threshold, path, goal, visited_in_path):
                 min_next_threshold = result
     return min_next_threshold, None, nodes_visited_count 
 
-
 def ida_star(start, goal):
     """Iterative Deepening A* Search."""
     threshold = heuristic(start, goal)
@@ -290,8 +288,6 @@ def ida_star(start, goal):
         threshold = result 
 
     return None, time.time() - start_time, total_nodes_visited
-
-# --- Hill Climbing Variants ---
 
 def simple_hill_climbing(start, goal):
     current = start
@@ -325,7 +321,6 @@ def simple_hill_climbing(start, goal):
         path.append(current)
 
     return path, time.time() - start_time, nodes_visited_count
-
 
 def steepest_ascent_hill_climbing(start, goal):
     current = start
@@ -361,7 +356,6 @@ def steepest_ascent_hill_climbing(start, goal):
         path.append(current)
 
     return path, time.time() - start_time, nodes_visited_count
-
 
 def random_hill_climbing(start, goal, max_iterations=10000):
     current = start
@@ -403,14 +397,56 @@ def random_hill_climbing(start, goal, max_iterations=10000):
 
     # Return path even if stuck or max iterations reached
     return path, time.time() - start_time, nodes_visited_count
+def simulated_annealing(start_state, goal_state, initial_temp=100.0, cooling_rate=0.99, min_temp=0.1, max_iterations_per_temp=100):
+    start_time = time.time()
+    nodes_visited = 0
+    current_state = copy.deepcopy(start_state)
+    current_energy = heuristic(current_state, goal_state)
+    best_state = copy.deepcopy(current_state)
+    best_energy = current_energy
+    path_taken = [copy.deepcopy(current_state)]
 
+    temp = initial_temp
 
-# --- Tkinter GUI Application ---
+    while temp > min_temp:
+        for _ in range(max_iterations_per_temp):
+            if current_state == goal_state:
+                time_taken = time.time() - start_time
+                print(f"SA: Goal found! Temp={temp:.2f}")
+                return path_taken, time_taken, nodes_visited
+            neighbors = get_neighbors(current_state)
+            if not neighbors:
+                break
+            next_state, _ = random.choice(neighbors)
+            nodes_visited += 1 
+            next_energy = heuristic(next_state, goal_state)
+            delta_E = next_energy - current_energy
 
+            accept = False
+            if delta_E < 0:
+                accept = True
+            else:
+                if temp > 1e-9: 
+                    probability = math.exp(-delta_E / temp)
+                    if random.random() < probability:
+                        accept = True
+            if accept:
+                current_state = next_state 
+                current_energy = next_energy
+                path_taken.append(copy.deepcopy(current_state)) 
+                if current_energy < best_energy:
+                    best_energy = current_energy
+                    best_state = copy.deepcopy(current_state)
+        temp *= cooling_rate
+        if not neighbors:
+            break
+    time_taken = time.time() - start_time
+    print(f"SA: Finished. Best energy reached: {best_energy}. Final Temp: {temp:.3f}")
+    return path_taken, time_taken, nodes_visited
 class PuzzleGUI:
     def __init__(self, master):
         self.master = master
-        master.title("8-Puzzle Solver Visualization")
+        master.title("8-PUZZLE SOLVER")
         self.current_displayed_state = copy.deepcopy(current_start_state)
         # Adjust size to fit grids, controls, and detail
         master.geometry("850x700") # May need tweaking
@@ -465,9 +501,9 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC"] # Shorter names
+                         "SimpleHC", "SteepestHC", "RandomHC", "SA"] # Shorter names
         algorithms = [dfs, bfs, ucs, a_star, greedy_best_first, ids, ida_star,
-                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing]
+                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing, simulated_annealing]
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR) # Container for wrapping buttons
         button_container.pack(side=tk.LEFT)
@@ -487,7 +523,6 @@ class PuzzleGUI:
             button.pack(side=tk.LEFT, padx=3, pady=2)
             self.buttons.append(button)
 
-        # --- Animation Speed Control & Stop Button (Top Right) ---
         speed_stop_frame = tk.Frame(self.top_control_frame, bg=self.BG_COLOR)
         speed_stop_frame.pack(side=tk.RIGHT, padx=10)
 
@@ -505,8 +540,6 @@ class PuzzleGUI:
 
         self.top_grids_frame = tk.Frame(self.main_display_frame, bg=self.BG_COLOR)
         self.top_grids_frame.pack(pady=10, anchor='n') # Pack at the top
-
-        # Frame for the bottom row (Current grid and Detail)
         self.bottom_frame = tk.Frame(self.main_display_frame, bg=self.BG_COLOR)
         self.bottom_frame.pack(pady=10, anchor='n') # Pack below top grids
 
