@@ -59,7 +59,6 @@ def state_to_tuple(state):
         return state
     return tuple(tuple(row) for row in state)
 
-
 def heuristic(state, goal):
     """Calculates the Manhattan distance heuristic."""
     distance = 0
@@ -147,7 +146,6 @@ def ucs(start, goal):
                 heapq.heappush(pq, (new_cost, neighbor, path + [state]))
 
     return None, time.time() - start_time, nodes_visited_count # No solution found
-
 
 def a_star(start, goal):
     # Priority queue: (f_cost, g_cost, state, path_so_far)
@@ -397,6 +395,7 @@ def random_hill_climbing(start, goal, max_iterations=10000):
 
     # Return path even if stuck or max iterations reached
     return path, time.time() - start_time, nodes_visited_count
+
 def simulated_annealing(start_state, goal_state, initial_temp=100.0, cooling_rate=0.99, min_temp=0.1, max_iterations_per_temp=100):
     start_time = time.time()
     nodes_visited = 0
@@ -443,6 +442,42 @@ def simulated_annealing(start_state, goal_state, initial_temp=100.0, cooling_rat
     time_taken = time.time() - start_time
     print(f"SA: Finished. Best energy reached: {best_energy}. Final Temp: {temp:.3f}")
     return path_taken, time_taken, nodes_visited
+
+def beam_search(start_state, goal_state, beam_width=5): # Đặt beam_width mặc định
+    start_time = time.time()
+    nodes_expanded = 0 # Đếm số nút được lấy ra từ beam để mở rộng
+
+    start_h = heuristic(start_state, goal_state)
+    # Beam lưu các tuple: (heuristic_value, state, path_list)
+    beam = [(start_h, start_state, [start_state])]
+    # Visited lưu các tuple trạng thái để tránh lặp
+    visited = {state_to_tuple(start_state)}
+
+    while beam: 
+        candidates = [] 
+        nodes_expanded += len(beam) 
+
+        for h_val, current_state, path in beam:
+            for neighbor, _ in get_neighbors(current_state):
+                neighbor_tuple = state_to_tuple(neighbor)
+
+                if neighbor_tuple not in visited:
+                    visited.add(neighbor_tuple)
+                    neighbor_h = heuristic(neighbor, goal_state)
+                    new_path = path + [neighbor] 
+                    if neighbor == goal_state:
+                        time_taken = time.time() - start_time
+                        print(f"Beam Search: Goal found! Beam width={beam_width}")
+                        return new_path, time_taken, nodes_expanded
+                    candidates.append((neighbor_h, neighbor, new_path))
+        if not candidates:
+            print(f"Beam Search: Failed - No candidates generated. Beam width={beam_width}")
+            break 
+        candidates.sort(key=lambda x: x[0])
+        beam = candidates[:beam_width]
+    time_taken = time.time() - start_time
+    print(f"Beam Search: Failed - Beam became empty. Beam width={beam_width}")
+    return None, time_taken, nodes_expanded # Trả về None cho path
 class PuzzleGUI:
     def __init__(self, master):
         self.master = master
@@ -501,9 +536,9 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC", "SA"] # Shorter names
+                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam"] 
         algorithms = [dfs, bfs, ucs, a_star, greedy_best_first, ids, ida_star,
-                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing, simulated_annealing]
+                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing, simulated_annealing, beam_search]
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR) # Container for wrapping buttons
         button_container.pack(side=tk.LEFT)
@@ -736,7 +771,6 @@ class PuzzleGUI:
         """Sets the flag to stop the current animation."""
         if self.animation_running: 
             self.stop_animation_flag = True
-
 if __name__ == "__main__":
     root = tk.Tk()
     gui = PuzzleGUI(root)
