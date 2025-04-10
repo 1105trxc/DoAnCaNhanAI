@@ -478,6 +478,56 @@ def beam_search(start_state, goal_state, beam_width=5): # Đặt beam_width mặ
     time_taken = time.time() - start_time
     print(f"Beam Search: Failed - Beam became empty. Beam width={beam_width}")
     return None, time_taken, nodes_expanded # Trả về None cho path
+
+def ao_search(start_state, goal_state):
+    start_time = time.time()
+    nodes_visited = 0
+
+    # Priority Queue stores tuples: (f_cost, g_cost, state, path_so_far)
+    # f_cost = g_cost + heuristic(state, goal_state)
+    start_h = heuristic(start_state, goal_state)
+    pq = [(start_h, 0, start_state, [start_state])]
+
+    # Keep track of the minimum cost (g_cost) found so far to reach a state
+    # Key: state_tuple, Value: g_cost
+    g_costs = {state_to_tuple(start_state): 0}
+
+    while pq:
+        f_cost_current, g_cost_current, current_state, path_current = heapq.heappop(pq)
+        nodes_visited += 1
+
+        # Check if this is the goal state
+        if current_state == goal_state:
+            time_taken = time.time() - start_time
+            return path_current, time_taken, nodes_visited
+
+        # If we found a better path to this state before, skip
+        # This check is important because heapq might contain duplicates
+        # with higher g_costs than already found paths.
+        current_state_tuple = state_to_tuple(current_state)
+        if g_cost_current > g_costs.get(current_state_tuple, float('inf')):
+             continue
+
+        # Explore neighbors (which are 'OR' successors in this context)
+        for neighbor, step_cost in get_neighbors(current_state):
+            new_g_cost = g_cost_current + step_cost
+            neighbor_tuple = state_to_tuple(neighbor)
+
+            # If this path to the neighbor is better than any found before
+            if new_g_cost < g_costs.get(neighbor_tuple, float('inf')):
+                g_costs[neighbor_tuple] = new_g_cost
+                new_h_cost = heuristic(neighbor, goal_state)
+                new_f_cost = new_g_cost + new_h_cost
+
+                # Add the neighbor to the priority queue
+                # Include the new path segment
+                heapq.heappush(pq, (new_f_cost, new_g_cost, neighbor, path_current + [neighbor]))
+
+
+    # If the priority queue becomes empty and goal is not reached
+    time_taken = time.time() - start_time
+    return None, time_taken, nodes_visited
+
 class PuzzleGUI:
     def __init__(self, master):
         self.master = master
@@ -536,9 +586,9 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam"] 
+                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AO Search"] 
         algorithms = [dfs, bfs, ucs, a_star, greedy_best_first, ids, ida_star,
-                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing, simulated_annealing, beam_search]
+                      simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing, simulated_annealing, beam_search, ao_search]
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR) # Container for wrapping buttons
         button_container.pack(side=tk.LEFT)
