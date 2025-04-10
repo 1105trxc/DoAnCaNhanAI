@@ -60,6 +60,13 @@ def heuristic(state, goal):
                     return float('inf')
     return distance
 
+initial_belief_state_tuples = {
+    state_to_tuple([[2, 6, 5], [8, 7, 0], [4, 3, 1]]), # The default start
+    state_to_tuple([[2, 6, 0], [8, 7, 5], [4, 3, 1]]), # Maybe 0 swapped with 5
+    state_to_tuple([[2, 6, 5], [8, 0, 7], [4, 3, 1]])  # Maybe 0 swapped with 7
+}
+
+
 # --- Search Algorithms ---
 def dfs(start, goal):
     stack = [(start, [])]
@@ -408,6 +415,296 @@ def ao_search(start_state, goal_state): # Renamed from ao_search for consistency
     time_taken = time.time() - start_time
     return None, time_taken, nodes_visited
 
+ACTION_MAP = {
+    'UP': (-1, 0),
+    'DOWN': (1, 0),
+    'LEFT': (0, -1),
+    'RIGHT': (0, 1)
+}
+ACTION_LIST = ['UP', 'DOWN', 'LEFT', 'RIGHT'] # Order matters for consistency if needed
+
+def apply_action(state, action_name):
+    zero_pos = find_zero(state)
+    if zero_pos is None: return None
+    r, c = zero_pos
+
+    if action_name not in ACTION_MAP: return None
+    dr, dc = ACTION_MAP[action_name]
+
+    nr, nc = r + dr, c + dc
+
+    if 0 <= nr < ROWS and 0 <= nc < COLS:
+        # Create a deep copy to avoid modifying the original state indirectly
+        # Crucially, work with the list-of-lists representation for modification
+        state_list = [list(row) for row in state] # Convert tuple back to list if needed
+        state_list[r][c], state_list[nr][nc] = state_list[nr][nc], state_list[r][c]
+        # Return the new state as a tuple for hashing
+        return state_to_tuple(state_list)
+    else:
+        # Action was invalid for this state (e.g., moving UP from top row)
+        return None
+
+# --- Sensorless Search Algorithm (BFS on Belief States) ---
+
+def sensorless_search(initial_belief_state_set, goal_state):
+    start_time = time.time()
+    belief_states_explored = 0
+
+    # Goal must also be a tuple for comparison
+    goal_state_tuple = state_to_tuple(goal_state)
+
+    # Initial belief state must be hashable (set of tuples -> frozenset of tuples)
+    initial_belief_frozenset = frozenset(initial_belief_state_set)
+
+    # Queue stores tuples: (current_belief_frozenset, list_of_actions)
+    queue = deque([(initial_belief_frozenset, [])])
+    # Visited stores frozensets representing belief states
+    visited = {initial_belief_frozenset}
+
+    while queue:
+        current_belief_frozenset, actions = queue.popleft()
+        belief_states_explored += 1
+        if len(current_belief_frozenset) == 1 and goal_state_tuple in current_belief_frozenset:
+            time_taken = time.time() - start_time
+            print(f"Sensorless Search: Goal reached!")
+            return actions, time_taken, belief_states_explored
+        # --- Explore Actions ---
+        for action in ACTION_LIST:
+            next_belief_state_set = set()
+            possible_for_all = True 
+            for state_tuple in current_belief_frozenset:
+                next_state_tuple = apply_action(state_tuple, action) 
+
+                if next_state_tuple is None:
+                    possible_for_all = False
+                    break # Stop checking this action for other states
+                else:
+                    next_belief_state_set.add(next_state_tuple)
+
+            # If the action was valid for all states and resulted in a non-empty next belief state
+            if possible_for_all and next_belief_state_set:
+                next_belief_frozenset = frozenset(next_belief_state_set)
+                if next_belief_frozenset not in visited:
+                    visited.add(next_belief_frozenset)
+                    queue.append((next_belief_frozenset, actions + [action]))
+
+    # Queue is empty, goal not reached
+    time_taken = time.time() - start_time
+    print("Sensorless Search: Failed - Queue empty.")
+    return None, time_taken, belief_states_explored
+
+def simulate_path(action_sequence, start_state, max_len=50):
+    """
+    Simulates a sequence of actions from a start state.
+
+    Returns:
+        Tuple: (final_state, path_taken, is_valid)
+               final_state: The state reached after the sequence (or last valid state).
+               path_taken: List of states visited during simulation.
+               is_valid: Boolean indicating if the simulation completed reasonably.
+    """
+    current_state = copy.deepcopy(start_state)
+    path = [copy.deepcopy(current_state)]
+    visited_sim = {state_to_tuple(current_state)} # Avoid loops within simulation
+
+    for i, action in enumerate(action_sequence):
+        if i >= max_len: # Prevent excessively long paths
+             # print("Sim path too long")
+             return current_state, path, False # Invalid due to length
+
+        next_state_tuple = apply_action(state_to_tuple(current_state), action)
+
+        if next_state_tuple is None:
+            # Invalid move (hit wall)
+            # print(f"Sim invalid move: {action} from {current_state}")
+            return current_state, path, False
+
+        if next_state_tuple in visited_sim:
+            # Loop detected during simulation
+             # print("Sim loop detected")
+            return tuple(list(r) for r in next_state_tuple), path + [tuple(list(r) for r in next_state_tuple)], False # Return state where loop occurred
+
+        # Convert tuple back to list of lists for next iteration's find_zero etc.
+        current_state = [list(row) for row in next_state_tuple]
+        path.append(copy.deepcopy(current_state))
+        visited_sim.add(next_state_tuple)
+
+        # Optional: Early exit if goal is found during simulation
+        # if current_state == goal_state_default: # Use the global goal state
+        #     return current_state, path, True
+
+    return current_state, path, True
+
+def calculate_fitness(final_state, goal_state, is_valid_path):
+    """ Calculates fitness based on heuristic to goal. Higher is better. """
+    if not is_valid_path:
+        return 0.0 # Very low fitness for invalid paths/simulations
+
+    h = heuristic(final_state, goal_state)
+    if h == float('inf'): # Should not happen if is_valid_path is True, but check
+        return 0.0
+    # Fitness = 1 / (1 + heuristic). Max fitness = 1 (when h=0)
+    fitness = 1.0 / (1.0 + h)
+    return fitness
+
+def create_initial_population(size, start_state, max_initial_len=15):
+    """ Creates an initial population of random action sequences. """
+    population = []
+    attempts = 0
+    max_attempts = size * 5 # Prevent infinite loop if start is tricky
+
+    while len(population) < size and attempts < max_attempts:
+        attempts += 1
+        seq_len = random.randint(1, max_initial_len)
+        sequence = [random.choice(ACTION_LIST) for _ in range(seq_len)]
+
+        # Optional basic check: simulate 1 step to avoid immediate invalid moves
+        first_state_tuple = apply_action(state_to_tuple(start_state), sequence[0])
+        if first_state_tuple is not None:
+            population.append(sequence)
+
+    # If still not enough, add very short random sequences
+    while len(population) < size:
+         population.append([random.choice(ACTION_LIST)])
+
+    return population
+
+def tournament_selection(population_with_fitness, tournament_size=3):
+    """ Selects an individual using tournament selection. """
+    if not population_with_fitness: return None
+    # Select k individuals randomly
+    tournament = random.sample(population_with_fitness, min(tournament_size, len(population_with_fitness)))
+    # Return the one with the best fitness
+    tournament.sort(key=lambda x: x[0], reverse=True) # Sort by fitness descending
+    return tournament[0][1] # Return the individual (action sequence)
+
+def crossover(parent1, parent2):
+    """ Performs single-point crossover on two action sequences. """
+    # Ensure parents have reasonable lengths
+    if not parent1 or not parent2:
+        return parent1[:], parent2[:] # Return copies if one is empty
+
+    min_len = min(len(parent1), len(parent2))
+    if min_len < 2: # Crossover needs at least 2 elements to be meaningful
+        return parent1[:], parent2[:] # Return copies
+
+    # Choose crossover point (ensure it's not at the very beginning or end)
+    point = random.randint(1, min_len - 1)
+
+    child1 = parent1[:point] + parent2[point:]
+    child2 = parent2[:point] + parent1[point:]
+    return child1, child2
+
+def mutate(sequence, mutation_rate=0.1):
+    """ Applies mutation to an action sequence. """
+    if not sequence: return sequence # Cannot mutate empty sequence
+
+    mutated_sequence = sequence[:] # Work on a copy
+    if random.random() < mutation_rate:
+        # Choose a mutation type
+        mutation_type = random.choice(['change', 'insert', 'delete'])
+
+        if mutation_type == 'change' and mutated_sequence:
+            idx = random.randint(0, len(mutated_sequence) - 1)
+            mutated_sequence[idx] = random.choice(ACTION_LIST)
+        elif mutation_type == 'insert':
+            idx = random.randint(0, len(mutated_sequence))
+            mutated_sequence.insert(idx, random.choice(ACTION_LIST))
+        elif mutation_type == 'delete' and len(mutated_sequence) > 1: # Avoid deleting the only move
+            idx = random.randint(0, len(mutated_sequence) - 1)
+            del mutated_sequence[idx]
+
+    return mutated_sequence
+
+
+# --- Main Genetic Algorithm Function ---
+
+def genetic_algorithm(start_state, goal_state, population_size=100, max_generations=50,
+                      mutation_rate=0.1, tournament_size=5, elitism_count=2, max_sim_len=60):
+    """
+    Solves the 8-puzzle using a Genetic Algorithm.
+
+    Returns:
+        Tuple: (best_path_found, time_taken, generations_run)
+               best_path_found: The sequence of states from the simulation of the *best*
+                                 individual found during the run. May not reach the goal.
+               time_taken: Execution time.
+               generations_run: Number of generations completed.
+    """
+    start_time = time.time()
+    population = create_initial_population(population_size, start_state)
+    best_overall_fitness = -1.0
+    best_overall_sim_path = [start_state] # Store the state path of the best individual
+
+    generations_run = 0
+    for generation in range(max_generations):
+        generations_run += 1
+        population_with_fitness = []
+        current_best_fitness_in_gen = -1.0
+        goal_found = False
+
+        # --- Evaluate Fitness ---
+        for individual in population:
+            final_state, sim_path, is_valid = simulate_path(individual, start_state, max_sim_len)
+            fitness = calculate_fitness(final_state, goal_state, is_valid)
+            population_with_fitness.append((fitness, individual, sim_path)) # Store fitness, sequence, and resulting state path
+
+            # Check if goal reached during evaluation
+            if is_valid and final_state == goal_state:
+                print(f"GA: Goal found in generation {generation}!")
+                time_taken = time.time() - start_time
+                # Return the path that led to the goal
+                return sim_path, time_taken, generation + 1
+
+            # Track best overall
+            if fitness > best_overall_fitness:
+                 best_overall_fitness = fitness
+                 best_overall_sim_path = sim_path # Save the state path
+
+            current_best_fitness_in_gen = max(current_best_fitness_in_gen, fitness)
+
+
+        # --- Check for Stagnation or Completion ---
+        print(f"Generation {generation}: Best Fitness = {current_best_fitness_in_gen:.4f}")
+        # Add more sophisticated stopping criteria if needed (e.g., no improvement)
+
+        # --- Selection, Crossover, Mutation ---
+        population_with_fitness.sort(key=lambda x: x[0], reverse=True) # Sort by fitness high to low
+
+        next_generation = []
+
+        # Elitism: Keep the best individuals
+        for i in range(elitism_count):
+            if i < len(population_with_fitness):
+                next_generation.append(population_with_fitness[i][1]) # Add the action sequence
+
+        # Generate the rest of the population
+        while len(next_generation) < population_size:
+            parent1 = tournament_selection(population_with_fitness, tournament_size)
+            parent2 = tournament_selection(population_with_fitness, tournament_size)
+
+            # Ensure parents are valid before crossover
+            if parent1 is None or parent2 is None:
+                 # Fallback: add random individuals if selection fails badly
+                 next_generation.extend(create_initial_population(1, start_state))
+                 continue
+
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1, mutation_rate)
+            child2 = mutate(child2, mutation_rate)
+
+            next_generation.append(child1)
+            if len(next_generation) < population_size:
+                next_generation.append(child2)
+
+        population = next_generation # Update population for next iteration
+
+    # Max generations reached, return the best path found so far
+    time_taken = time.time() - start_time
+    print(f"GA: Max generations reached. Best fitness achieved: {best_overall_fitness:.4f}")
+    # Nodes visited metric is less meaningful here, return generations run instead
+    return best_overall_sim_path, time_taken, generations_run
+
 # --- GUI Class ---
 class PuzzleGUI:
     def __init__(self, master):
@@ -472,7 +769,7 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AO*"]
+                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AO_Search", "Sensorless", "GA"]
         # Ensure beam_search partial is created if needed, otherwise use ao_star directly
         beam_width_default = 5 # Default beam width if you want to customize it
         beam_search_partial = partial(beam_search, beam_width=beam_width_default)
@@ -480,7 +777,7 @@ class PuzzleGUI:
         algorithms = [
             dfs, bfs, ucs, a_star, greedy_best_first, ids, ida_star,
             simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing,
-            simulated_annealing, beam_search, ao_search # Use partial for Beam
+            simulated_annealing, beam_search, ao_search, sensorless_search, genetic_algorithm # Use partial for Beam
         ]
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
@@ -595,45 +892,78 @@ class PuzzleGUI:
         if self.animation_running:
             messagebox.showwarning("Busy", "An animation is already running.")
             return
+        # --- Reset GUI elements ---
         self.set_buttons_state(tk.DISABLED)
         self.animation_running = True
         self.stop_animation_flag = False
         self.current_step_count.set(0)
         self.update_detail_box(steps=0, time_val="-", nodes_val="-")
+        # Reset current grid display to the initial default state for clarity
         self.update_grid(self.current_canvas, current_start_state, self.CURRENT_TILE_COLOR)
         self.master.update()
 
         def target():
             try:
-                # Pass the *current* start and goal states to the algorithm
-                result = algorithm_func(current_start_state, current_goal_state)
+                if algo_name == "Sensorless":
+                    result = algorithm_func(current_goal_state) 
+                else:
+                    result = algorithm_func(current_start_state, current_goal_state)
+
                 self.master.after(0, self._handle_algorithm_result, result, algo_name)
             except Exception as e:
                  print(f"Error in algorithm thread: {e}")
+                 # In chi tiết lỗi để debug dễ hơn
+                 import traceback
+                 traceback.print_exc()
                  self.master.after(0, self._handle_algorithm_error, algo_name, e)
 
         self.animation_thread = threading.Thread(target=target, daemon=True)
         self.animation_thread.start()
 
     def _handle_algorithm_result(self, result, algo_name):
+        generations_or_nodes = 0 # Default value
         if result is None:
-            solution_path, time_taken, nodes_visited = None, 0, 0
+            solution_path, time_taken = None, 0
             print(f"Warning: Algorithm {algo_name} returned None.")
         else:
-             solution_path, time_taken, nodes_visited = result
-
-        self.update_detail_box(time_val=time_taken, nodes_val=nodes_visited)
-
-        if solution_path and len(solution_path) > 0:
-            is_goal_reached = (solution_path[-1] == current_goal_state)
-            if is_goal_reached:
-                 print(f"{algo_name} found solution.")
-                 self._animate_solution(solution_path)
-            else:
-                 print(f"{algo_name} finished but did not reach the goal state.")
-                 self._animate_solution(solution_path) # Still animate the path taken
+            solution_path, time_taken, generations_or_nodes = result
+        if algo_name == "GA":
+            self.update_detail_box(time_val=time_taken, nodes_val=f"{generations_or_nodes} gen")
         else:
+            self.update_detail_box(time_val=time_taken, nodes_val=generations_or_nodes)
+        if algo_name == "Sensorless": # Handle Sensorless separately
+            action_sequence = solution_path # In GA case, solution_path is path, not actions
+            if action_sequence is not None: # Sensorless returns actions or None
+                print(f"{algo_name} found action sequence: {' -> '.join(action_sequence)}")
+                self.update_detail_box(steps=len(action_sequence))
+                self.update_grid(self.current_canvas, current_goal_state, self.CURRENT_TILE_COLOR)
+                messagebox.showinfo("Result", f"{algo_name} found a plan!\nActions: {', '.join(action_sequence)}")
+            else:
+                print(f"{algo_name} did not find a plan.")
+                self.update_detail_box(steps="-")
+                messagebox.showinfo("Result", f"{algo_name} did not find a plan.")
+            self.animation_running = False
+            self.set_buttons_state(tk.NORMAL)
+
+        # Handling for GA and other path-based algorithms
+        elif solution_path and len(solution_path) > 0:
+            is_goal_reached = (solution_path[-1] == current_goal_state)
+            path_steps = len(solution_path) - 1 # Steps in the returned path
+
+            if is_goal_reached:
+                print(f"{algo_name} found solution.")
+                self.update_detail_box(steps=path_steps) # Update steps based on path len
+                self._animate_solution(solution_path) # Start animation
+            else:
+                # Handle GA or other algs that might return path but not reach goal
+                print(f"{algo_name} finished. Goal reached: {is_goal_reached}. Displaying best path found.")
+                self.update_detail_box(steps=path_steps)
+                messagebox.showinfo("Result", f"{algo_name} finished.\nGoal reached: {is_goal_reached}\nDisplaying best path found.")
+                self._animate_solution(solution_path) # Animate the path found anyway
+        else:
+            # No solution path found at all
             print(f"{algo_name} did not find a solution.")
+            self.update_detail_box(steps="-")
             messagebox.showinfo("Result", f"{algo_name} did not find a solution path.")
             self.animation_running = False
             self.set_buttons_state(tk.NORMAL)
