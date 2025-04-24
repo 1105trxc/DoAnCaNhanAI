@@ -9,7 +9,7 @@ import threading
 import copy
 from functools import partial
 import math
-
+import sys
 # --- Core Logic ---
 ROWS, COLS = 3, 3
 start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
@@ -64,7 +64,118 @@ initial_belief_state_tuples = {
     state_to_tuple([[2, 6, 0], [8, 7, 5], [4, 3, 1]]),
     state_to_tuple([[2, 6, 5], [8, 0, 7], [4, 3, 1]])
 }
+# --- Action Definitions ---
+ACTION_MAP = {
+    'UP': (-1, 0),
+    'DOWN': (1, 0),
+    'LEFT': (0, -1),
+    'RIGHT': (0, 1)
+}
+ACTION_LIST = ['UP', 'DOWN', 'LEFT', 'RIGHT']
 
+def apply_action(state_tuple, action_name):
+    """
+    Áp dụng một hành động lên một trạng thái (dạng tuple).
+    Trả về trạng thái kết quả (dạng tuple) hoặc None nếu hành động không hợp lệ.
+    """
+    state_list = [list(row) for row in state_tuple]
+    zero_pos = find_zero(state_list)
+    if zero_pos is None: return None
+    r, c = zero_pos
+
+    if action_name not in ACTION_MAP: return None
+    dr, dc = ACTION_MAP[action_name]
+    nr, nc = r + dr, c + dc
+
+    if 0 <= nr < ROWS and 0 <= nc < COLS:
+        new_state_list = [row[:] for row in state_list]
+        new_state_list[r][c], new_state_list[nr][nc] = new_state_list[nr][nc], new_state_list[r][c]
+        return state_to_tuple(new_state_list)
+    else:
+        return None
+
+# --- Belief Space Search Algorithms ---
+# Chỉ giữ lại BFS và DFS trên không gian niềm tin
+
+def dfs_belief_search(start_state, goal_state): # DFS on Belief Space
+    """Tìm kiếm DFS trên không gian niềm tin."""
+    initial_belief_state_set = initial_belief_state_tuples # Bỏ qua start_state bên trong
+    start_time = time.time()
+    belief_states_explored = 0
+    goal_state_tuple = state_to_tuple(goal_state)
+    initial_belief_frozenset = frozenset(initial_belief_state_set)
+    stack = [(initial_belief_frozenset, [])]
+    visited = {initial_belief_frozenset}
+
+    while stack:
+        current_belief_frozenset, actions = stack.pop()
+        belief_states_explored += 1
+
+        if len(current_belief_frozenset) == 1 and goal_state_tuple in current_belief_frozenset:
+            time_taken = time.time() - start_time
+            print(f"DFS Belief Search: Goal reached!")
+            return actions, time_taken, belief_states_explored
+
+        for action in reversed(ACTION_LIST):
+            next_belief_state_set = set()
+            possible_for_all = True
+            for state_tuple in current_belief_frozenset:
+                next_state_tuple = apply_action(state_tuple, action)
+                if next_state_tuple is None:
+                    possible_for_all = False
+                    break
+                else:
+                    next_belief_state_set.add(next_state_tuple)
+
+            if possible_for_all and next_belief_state_set:
+                next_belief_frozenset = frozenset(next_belief_state_set)
+                if next_belief_frozenset not in visited:
+                    visited.add(next_belief_frozenset)
+                    stack.append((next_belief_frozenset, actions + [action]))
+
+    time_taken = time.time() - start_time
+    print("DFS Belief Search: Failed - Stack empty.")
+    return None, time_taken, belief_states_explored
+
+def bfs_belief_search(start_state, goal_state): # BFS on Belief Space (Sensorless)
+    """Tìm kiếm không cảm biến (BFS trên không gian niềm tin)."""
+    initial_belief_state_set = initial_belief_state_tuples # Bỏ qua start_state bên trong
+    start_time = time.time()
+    belief_states_explored = 0
+    goal_state_tuple = state_to_tuple(goal_state)
+    initial_belief_frozenset = frozenset(initial_belief_state_set)
+    queue = deque([(initial_belief_frozenset, [])])
+    visited = {initial_belief_frozenset}
+
+    while queue:
+        current_belief_frozenset, actions = queue.popleft()
+        belief_states_explored += 1
+
+        if len(current_belief_frozenset) == 1 and goal_state_tuple in current_belief_frozenset:
+            time_taken = time.time() - start_time
+            print(f"BFS Belief Search: Goal reached!")
+            return actions, time_taken, belief_states_explored
+
+        for action in ACTION_LIST:
+            next_belief_state_set = set()
+            possible_for_all = True
+            for state_tuple in current_belief_frozenset:
+                next_state_tuple = apply_action(state_tuple, action)
+                if next_state_tuple is None:
+                    possible_for_all = False
+                    break
+                else:
+                    next_belief_state_set.add(next_state_tuple)
+
+            if possible_for_all and next_belief_state_set:
+                next_belief_frozenset = frozenset(next_belief_state_set)
+                if next_belief_frozenset not in visited:
+                    visited.add(next_belief_frozenset)
+                    queue.append((next_belief_frozenset, actions + [action]))
+
+    time_taken = time.time() - start_time
+    print("BFS Belief Search: Failed - Queue empty.")
+    return None, time_taken, belief_states_explored
 
 # --- Search Algorithms ---
 def dfs(start, goal):
@@ -502,6 +613,110 @@ def simulate_path(action_sequence, start_state, max_len=50):
 
     return current_state, path, True
 
+def _backtracking_recursive_csp_style(current_state, goal_state, path, visited_in_path, nodes_visited_list, start_time, time_limit):
+    """Hàm đệ quy theo phong cách CSP Backtracking."""
+    nodes_visited_list[0] += 1
+    current_tuple = state_to_tuple(current_state)
+
+    # --- Kiểm tra điều kiện dừng ---
+    # 1. Giới hạn thời gian
+    if time.time() - start_time > time_limit:
+        return "Timeout"
+
+    # 2. Đã đạt đích (tương đương assignment is complete và hợp lệ)
+    if current_state == goal_state:
+        return path # Trả về lời giải (đường đi)
+
+    # --- Lựa chọn và khám phá ---
+    # "Chọn biến chưa gán" tương đương với việc chọn trạng thái tiếp theo từ hàng xóm.
+    # "Duyệt qua miền giá trị" tương đương với việc lặp qua các hàng xóm.
+
+    # Thêm trạng thái hiện tại vào tập visited của đường đi này
+    visited_in_path.add(current_tuple)
+
+    for neighbor, _ in get_neighbors(current_state):
+        neighbor_tuple = state_to_tuple(neighbor)
+
+        # "Kiểm tra ràng buộc": Chỉ đi tiếp nếu hàng xóm chưa có trong đường đi hiện tại
+        if neighbor_tuple not in visited_in_path:
+            # "Thêm vào assignment" & "Gọi đệ quy"
+            # Truyền bản sao của visited_in_path để backtracking hoạt động đúng
+            result = _backtracking_recursive_csp_style(
+                neighbor, goal_state, path + [neighbor], visited_in_path.copy(),
+                nodes_visited_list, start_time, time_limit
+            )
+
+            # Nếu lời gọi đệ quy thành công (tìm thấy đường đi hoặc bị timeout)
+            if result is not None: # result có thể là path (list) hoặc "Timeout" (str)
+                return result # Truyền kết quả lên
+
+    # --- Backtrack ---
+    # Nếu vòng lặp kết thúc mà không tìm thấy giải pháp từ các hàng xóm
+    # "remove from assignment" xảy ra ngầm khi hàm trả về và stack frame bị hủy
+    # Không cần xóa khỏi visited_in_path vì đã truyền bản sao
+    return None # Tương đương "failure"
+
+# Hàm chính gọi backtracking
+def backtracking_search_csp(start, goal, time_limit=30):
+    """
+    Hàm chính khởi tạo Backtracking Search theo phong cách CSP.
+    Trả về (path, time_taken, nodes_visited) hoặc (None, time_taken, nodes_visited).
+    """
+    start_time = time.time()
+    nodes_visited_list = [0] # Dùng list để truyền tham chiếu
+    path_init = [start]
+    visited_init = set() # Visited cho đường đi ban đầu
+
+    # Tăng giới hạn đệ quy (Rất quan trọng cho backtracking sâu)
+    original_recursion_limit = sys.getrecursionlimit()
+    # Ước lượng một giới hạn đủ lớn, ví dụ 5000 hoặc hơn nếu cần
+    new_limit = 5000
+    limit_changed = False
+    if new_limit > original_recursion_limit:
+        try:
+            sys.setrecursionlimit(new_limit)
+            limit_changed = True
+            print(f"Temporarily increasing recursion limit to {new_limit}")
+        except Exception as e:
+            print(f"Could not set recursion limit: {e}. Using default: {original_recursion_limit}")
+
+    solution_path = None
+    status = "Unknown"
+    try:
+        result = _backtracking_recursive_csp_style(
+            start, goal, path_init, visited_init, nodes_visited_list, start_time, time_limit
+        )
+
+        if result == "Timeout":
+            print(f"Backtracking Search (CSP Style): Timeout after {time_limit} seconds.")
+            status = "Timeout"
+        elif isinstance(result, list): # Nếu kết quả là một đường đi
+            print(f"Backtracking Search (CSP Style): Goal found!")
+            solution_path = result
+            status = "Solution Found"
+        else: # Kết quả là None (không tìm thấy)
+             print(f"Backtracking Search (CSP Style): Failed - Goal not found or not reachable.")
+             status = "Not Found"
+
+    except RecursionError:
+        print(f"Backtracking Search (CSP Style): Failed - Maximum recursion depth exceeded (limit was {sys.getrecursionlimit()}).")
+        solution_path = None
+        status = "Recursion Limit Exceeded"
+    except Exception as e:
+        print(f"Backtracking Search (CSP Style): An unexpected error occurred: {e}")
+        solution_path = None
+        status = f"Error: {e}"
+    finally:
+        # Luôn khôi phục giới hạn đệ quy ban đầu
+        if limit_changed:
+             sys.setrecursionlimit(original_recursion_limit)
+             print(f"Recursion limit restored to {original_recursion_limit}")
+
+    time_taken = time.time() - start_time
+    print(f"Backtracking Search (CSP Style) completed with status: {status}")
+    return solution_path, time_taken, nodes_visited_list[0]
+
+
 def calculate_fitness(final_state, goal_state, is_valid_path):
     if not is_valid_path:
         return 0.0
@@ -690,14 +905,14 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AO_Search", "Sensorless", "GA"]
+                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AO_Search", "Sensorless", "GA", "DFS_Belief", "BFS_Belief", "Backtracking"]
         beam_width_default = 5
         beam_search_partial = partial(beam_search, beam_width=beam_width_default)
 
         algorithms = [
             dfs, bfs, ucs, a_star, greedy_best_first, ids, ida_star,
             simple_hill_climbing, steepest_ascent_hill_climbing, random_hill_climbing,
-            simulated_annealing, beam_search_partial, ao_search, sensorless_search, genetic_algorithm
+            simulated_annealing, beam_search_partial, ao_search, sensorless_search, genetic_algorithm, bfs_belief_search, dfs_belief_search, backtracking_search_csp
         ]
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
