@@ -1,7 +1,3 @@
-Tuyệt vời, tôi sẽ cập nhật lại file `README.md` để phản ánh những thay đổi gần đây nhất trong code của bạn, đặc biệt là chức năng cài đặt trạng thái/niềm tin và danh sách thuật toán chính xác.
-
----
-
 # 8-PUZZLE SOLVER VISUALIZATION (Tkinter)
 
 Ứng dụng này là một công cụ tương tác được xây dựng bằng Python và thư viện Tkinter để giải bài toán 8-Puzzle bằng nhiều thuật toán tìm kiếm khác nhau và trực quan hóa quá trình giải đó. Nó cho phép người dùng cài đặt trạng thái bắt đầu, trạng thái kết thúc, và đặc biệt là tập hợp niềm tin ban đầu cho các thuật thuật tìm kiếm không cảm biến (sensorless search), cung cấp một cái nhìn sâu sắc hơn về các phương pháp giải quyết vấn đề trong AI.
