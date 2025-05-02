@@ -1,123 +1,82 @@
-# 8-PUZZLE SOLVER VISUALIZATION
+Tuyệt vời, tôi sẽ cập nhật lại file `README.md` để phản ánh những thay đổi gần đây nhất trong code của bạn, đặc biệt là chức năng cài đặt trạng thái/niềm tin và danh sách thuật toán chính xác.
 
-Ứng dụng này là một công cụ tương tác được xây dựng bằng Python và thư viện Tkinter để giải bài toán 8-Puzzle bằng nhiều thuật toán tìm kiếm khác nhau và trực quan hóa quá trình giải đó. Nó cho phép người dùng cài đặt trạng thái bắt đầu, trạng thái kết thúc, và thậm chí cả tập hợp niềm tin ban đầu cho các thuật toán tìm kiếm không cảm biến (sensorless search).
+---
+
+# 8-PUZZLE SOLVER VISUALIZATION (Tkinter)
+
+Ứng dụng này là một công cụ tương tác được xây dựng bằng Python và thư viện Tkinter để giải bài toán 8-Puzzle bằng nhiều thuật toán tìm kiếm khác nhau và trực quan hóa quá trình giải đó. Nó cho phép người dùng cài đặt trạng thái bắt đầu, trạng thái kết thúc, và đặc biệt là tập hợp niềm tin ban đầu cho các thuật thuật tìm kiếm không cảm biến (sensorless search), cung cấp một cái nhìn sâu sắc hơn về các phương pháp giải quyết vấn đề trong AI.
 
 ## Giới thiệu về Bài toán 8-Puzzle
 
-Bài toán 8-Puzzle là một trò chơi trượt ô cổ điển, thường được trình bày dưới dạng một khung hình vuông 3x3 với 8 ô vuông được đánh số (từ 1 đến 8) và một ô trống. Mục tiêu của trò chơi là sắp xếp lại các ô theo thứ tự tăng dần bằng cách trượt ô trống vào các vị trí lân cận (lên, xuống, trái, phải).
+Bài toán 8-Puzzle là một trò chơi trượt ô cổ điển, thường được trình bày dưới dạng một khung hình vuông 3x3 với 8 ô vuông được đánh số (từ 1 đến 8) và một ô trống. Mục tiêu của trò chơi là sắp xếp lại các ô theo thứ tự tăng dần (hoặc một cấu hình đích khác) bằng cách trượt ô trống vào các vị trí lân cận (lên, xuống, trái, phải).
 
-Đây là một bài toán điển hình trong lĩnh vực Trí tuệ Nhân tạo để minh họa các thuật toán tìm kiếm trong không gian trạng thái.
+Đây là một bài toán điển hình trong lĩnh vực Trí tuệ Nhân tạo để minh họa các thuật toán tìm kiếm trong không gian trạng thái và không gian niềm tin.
 
-**Trạng thái:** Một cấu hình của bảng 3x3 (vị trí của 8 ô số và 1 ô trống).
-**Hành động:** Di chuyển ô trống lên, xuống, trái, hoặc phải (nếu khả thi).
-**Trạng thái bắt đầu:** Một cấu hình bảng ban đầu cho trước.
-**Trạng thái đích:** Một cấu hình bảng mong muốn (thường là các số được sắp xếp theo thứ tự).
+**Trạng thái:** Một cấu hình của bảng 3x3.
+**Hành động:** Di chuyển ô trống (lên, xuống, trái, phải).
+**Trạng thái bắt đầu (State-Space):** Một cấu hình bảng ban đầu cho trước.
+**Trạng thái đích (State-Space):** Một cấu hình bảng mong muốn.
+**Niềm tin ban đầu (Belief-Space):** Một *tập hợp* các cấu hình bảng mà tác nhân có thể đang ở đó.
+**Niềm tin đích (Belief-Space):** Một *tập hợp* chỉ chứa duy nhất trạng thái đích.
 
 ## Các Thuật toán Tìm kiếm đã triển khai
 
-Ứng dụng này triển khai nhiều loại thuật toán tìm kiếm khác nhau, bao gồm tìm kiếm trên không gian trạng thái (state-space search) và tìm kiếm trên không gian niềm tin (belief-space search - sensorless search).
+Ứng dụng này triển khai nhiều loại thuật toán tìm kiếm khác nhau:
 
 ### I. Thuật toán Tìm kiếm trên Không gian Trạng thái (State-Space Search)
 
 Các thuật toán này giả định rằng tác nhân luôn biết chính xác mình đang ở trạng thái nào (observable).
 
-1.  **BFS (Breadth-First Search):**
-    *   **Nguyên lý:** Khám phá đồ thị theo chiều rộng, thăm tất cả các nút ở độ sâu `d` trước khi chuyển sang độ sâu `d+1`.
-    *   **Tính chất:** Hoàn chỉnh (complete) nếu có lời giải, tối ưu (optimal) nếu chi phí bước là đồng nhất (như trong 8-Puzzle).
-    *   **Nhược điểm:** Có thể sử dụng lượng bộ nhớ rất lớn trên các bài toán có yếu tố phân nhánh cao (high branching factor).
-
-2.  **DFS (Depth-First Search):**
-    *   **Nguyên lý:** Khám phá đồ thị theo chiều sâu, đi sâu vào một nhánh càng xa càng tốt trước khi quay lui.
-    *   **Tính chất:** Không hoàn chỉnh trên đồ thị có chu kỳ (không có visited set), không tối ưu. Hoàn chỉnh trên cây hữu hạn.
-    *   **Nhược điểm:** Dễ bị kẹt trong các nhánh sâu vô tận hoặc không có lời giải.
-
-3.  **UCS (Uniform Cost Search):**
-    *   **Nguyên lý:** Mở rộng nút có chi phí đường đi từ gốc (g-cost) thấp nhất.
-    *   **Tính chất:** Hoàn chỉnh, tối ưu.
-    *   **Nhược điểm:** Giống BFS, có thể sử dụng bộ nhớ lớn. Không sử dụng thông tin heuristic để dẫn đường.
-
-4.  **Greedy Best-First Search:**
-    *   **Nguyên lý:** Mở rộng nút có giá trị heuristic (h-cost) thấp nhất. Sử dụng heuristic Manhattan để đánh giá khoảng cách đến đích.
-    *   **Tính chất:** Không hoàn chỉnh, không tối ưu.
-    *   **Ưu điểm:** Có thể tìm thấy lời giải nhanh hơn BFS/UCS nếu heuristic tốt, sử dụng ít bộ nhớ hơn (nếu không lưu visited set).
-
-5.  **A\* Search:**
-    *   **Nguyên lý:** Mở rộng nút có giá trị f-cost (f = g + h) thấp nhất, trong đó g là chi phí đường đi từ gốc và h là heuristic đến đích. Sử dụng heuristic Manhattan.
-    *   **Tính chất:** Hoàn chỉnh, tối ưu nếu heuristic là admissible (heuristic Manhattan là admissible).
-    *   **Ưu điểm:** Kết hợp ưu điểm của UCS (tối ưu) và Greedy (sử dụng heuristic để dẫn đường). Thường là một trong những thuật toán hiệu quả nhất cho bài toán 8-Puzzle.
-
-6.  **IDS (Iterative Deepening Search):**
-    *   **Nguyên lý:** Thực hiện một loạt các tìm kiếm theo chiều sâu với giới hạn độ sâu tăng dần (Depth-Limited Search).
-    *   **Tính chất:** Hoàn chỉnh, tối ưu (nếu chi phí bước là đồng nhất). Có hiệu quả về bộ nhớ như DFS.
-    *   **Ưu điểm:** Kết hợp ưu điểm về bộ nhớ của DFS và tính hoàn chỉnh/tối ưu của BFS (trên đồ thị không trọng số).
-
-7.  **IDA\* (Iterative Deepening A\*):**
-    *   **Nguyên lý:** Thực hiện một loạt các tìm kiếm theo chiều sâu với giới hạn chi phí (threshold) tăng dần. Giới hạn chi phí ban đầu bằng heuristic của trạng thái gốc, sau đó tăng lên ngưỡng f-cost nhỏ nhất vượt quá ngưỡng hiện tại trong lần lặp trước. Sử dụng heuristic Manhattan.
-    *   **Tính chất:** Hoàn chỉnh, tối ưu nếu heuristic là admissible và consistent. Hiệu quả về bộ nhớ như DFS.
-    *   **Ưu điểm:** Kết hợp ưu điểm về bộ nhớ của DFS và tính tối ưu của A\*. Thường là một trong những thuật toán hiệu quả nhất về cả thời gian và bộ nhớ cho bài toán 8-Puzzle.
+1.  **BFS (Breadth-First Search):** Hoàn chỉnh, tối ưu (với chi phí bước đồng nhất). Khám phá theo chiều rộng.
+2.  **DFS (Depth-First Search):** Hoàn chỉnh (với visited set và không gian hữu hạn), không tối ưu. Khám phá theo chiều sâu.
+3.  **UCS (Uniform Cost Search):** Hoàn chỉnh, tối ưu. Mở rộng nút có chi phí thấp nhất.
+4.  **Greedy Best-First Search:** Không hoàn chỉnh, không tối ưu. Mở rộng nút có heuristic tốt nhất (Manhattan).
+5.  **A\* Search:** Hoàn chỉnh, tối ưu (với heuristic admissible và consistent). Mở rộng nút có f-cost (g+h) thấp nhất.
+6.  **IDS (Iterative Deepening Search):** Hoàn chỉnh, tối ưu. Kết hợp ưu điểm bộ nhớ của DFS và tính hoàn chỉnh/tối ưu của BFS.
+7.  **IDA\* (Iterative Deepening A\*):** Hoàn chỉnh, tối ưu. Kết hợp ưu điểm bộ nhớ của DFS và tính tối ưu của A\*. Thường hiệu quả cho 8-Puzzle.
 
 ### II. Thuật toán Tìm kiếm Cục bộ (Local Search)
 
-Các thuật toán này không khám phá toàn bộ không gian trạng thái mà tập trung vào việc cải thiện dần trạng thái hiện tại dựa trên thông tin lân cận. Chúng không đảm bảo tìm được lời giải tối ưu hoặc tìm được lời giải.
+Các thuật toán này không đảm bảo tìm được lời giải tối ưu hoặc tìm được lời giải nào cả, dễ bị kẹt ở điểm cực tiểu cục bộ.
 
-1.  **Simple Hill Climbing:**
-    *   **Nguyên lý:** Di chuyển đến trạng thái lân cận *đầu tiên* có heuristic tốt hơn trạng thái hiện tại.
-    *   **Tính chất:** Không hoàn chỉnh, không tối ưu.
-    *   **Nhược điểm:** Dễ bị kẹt ở local optima hoặc plateau.
-
-2.  **Steepest Ascent Hill Climbing:**
-    *   **Nguyên lý:** Di chuyển đến trạng thái lân cận *tốt nhất* (có heuristic thấp nhất) trong số các trạng thái lân cận có heuristic tốt hơn trạng thái hiện tại.
-    *   **Tính chất:** Không hoàn chỉnh, không tối ưu.
-    *   **Nhược điểm:** Cũng dễ bị kẹt ở local optima hoặc plateau.
-
-3.  **Random Hill Climbing:**
-    *   **Nguyên lý:** Chọn ngẫu nhiên một trạng thái lân cận *trong số các trạng thái tốt hơn* trạng thái hiện tại.
-    *   **Tính chất:** Không hoàn chỉnh, không tối ưu.
-    *   **Nhược điểm:** Có thể thoát khỏi các plateau tốt hơn Simple/Steepest một chút do tính ngẫu nhiên, nhưng vẫn dễ bị kẹt ở local optima.
-
-4.  **Simulated Annealing (SA):**
-    *   **Nguyên lý:** Dựa trên quá trình luyện kim. Di chuyển đến trạng thái tốt hơn luôn được chấp nhận. Di chuyển đến trạng thái tồi hơn có thể được chấp nhận với xác suất giảm dần theo "nhiệt độ" (giảm dần theo thời gian).
-    *   **Tính chất:** Có thể thoát khỏi local optima. Hoàn chỉnh (với lịch trình làm nguội phù hợp và thời gian vô hạn), nhưng không tối ưu.
-    *   **Ưu điểm:** Có khả năng tìm được lời giải tốt hơn Hill Climbing bằng cách chấp nhận rủi ro di chuyển đến trạng thái tồi hơn.
-
-5.  **Beam Search:**
-    *   **Nguyên lý:** Mở rộng K trạng thái tốt nhất ở mỗi cấp độ tìm kiếm. Giữ K trạng thái tốt nhất trong số các trạng thái con được sinh ra làm "chùm tia" cho cấp độ tiếp theo.
-    *   **Tính chất:** Không hoàn chỉnh, không tối ưu.
-    *   **Ưu điểm:** Kiểm soát bộ nhớ (chỉ lưu K trạng thái mỗi cấp). Có thể tìm lời giải nhanh hơn BFS/UCS nếu K đủ lớn và heuristic tốt.
+1.  **Simple Hill Climbing:** Di chuyển đến trạng thái lân cận *đầu tiên* tốt hơn.
+2.  **Steepest Ascent Hill Climbing:** Di chuyển đến trạng thái lân cận *tốt nhất* tốt hơn.
+3.  **Random Hill Climbing:** Di chuyển đến trạng thái lân cận tốt hơn được *chọn ngẫu nhiên*.
+4.  **Simulated Annealing (SA):** Có khả năng thoát local optima bằng cách chấp nhận ngẫu nhiên các bước đi tồi hơn với xác suất giảm dần.
+5.  **Beam Search:** Giữ lại K trạng thái tốt nhất ở mỗi cấp độ. Không hoàn chỉnh, không tối ưu.
 
 ### III. Thuật toán Tìm kiếm trên Không gian Niềm tin (Belief-Space Search / Sensorless Search)
 
-Các thuật toán này hoạt động khi tác nhân không biết chính xác trạng thái ban đầu của mình (chỉ biết nó nằm trong một tập hợp các trạng thái - trạng thái niềm tin). Mục tiêu là tìm một kế hoạch chung (chuỗi hành động cố định) mà khi áp dụng cho *tất cả* các trạng thái trong tập niềm tin ban đầu, đều đưa tác nhân đến **duy nhất trạng thái đích** (để tác nhân biết chắc mình đã đến đích).
+Các thuật toán này tìm kiếm một kế hoạch chung (chuỗi hành động cố định) hoạt động cho *tất cả* các trạng thái trong tập niềm tin ban đầu để đi đến niềm tin đích.
 
-1.  **Sensorless Search (BFS on Belief Space):**
-    *   **Nguyên lý:** Thực hiện tìm kiếm BFS trên không gian của các *tập hợp trạng thái* (trạng thái niềm tin). Một hành động chỉ khả thi cho một trạng thái niềm tin nếu nó hợp lệ cho *tất cả* các trạng thái riêng lẻ trong tập hợp niềm tin đó.
-    *   **Tính chất:** Hoàn chỉnh (nếu không gian niềm tin là hữu hạn và có kế hoạch giải), tối ưu (tìm kế hoạch ngắn nhất) trong không gian niềm tin.
-    *   **Nhược điểm:** Không gian niềm tin là rất lớn. Tìm kiếm có thể rất chậm hoặc hết bộ nhớ/thời gian. Việc tìm một kế hoạch chung hoạt động cho nhiều trạng thái ban đầu là rất khó.
+1.  **Sensorless Search (BFS on Belief Space):** Tìm kế hoạch ngắn nhất trong không gian niềm tin bằng BFS.
+2.  **DFS\_Belief (DFS on Belief Space):** Tìm kế hoạch bằng DFS trong không gian niềm tin.
 
-2.  **DFS\_Belief (DFS on Belief Space):**
-    *   **Nguyên lý:** Thực hiện tìm kiếm DFS trên không gian niềm tin.
-    *   **Tính chất:** Hoàn chỉnh (trên đồ thị niềm tin hữu hạn nếu không có chu kỳ hoặc có visited set), không tối ưu (tìm kế hoạch đầu tiên tìm thấy).
-    *   **Nhược điểm:** Giống như BFS Belief, không gian niềm tin lớn. Có thể tìm kế hoạch nhanh hơn BFS Belief nếu kế hoạch đầu tiên nằm ở nhánh sâu được thăm trước.
+### IV. Thuật toán Khác
 
-3.  **Backtracking Search (CSP Style):**
-    *   **Nguyên lý:** Sử dụng một hình thức tìm kiếm theo chiều sâu với quay lui để tìm một đường đi từ trạng thái bắt đầu đến trạng thái đích trong không gian trạng thái. Phiên bản này được trình bày theo phong cách giải bài toán CSP (Constraint Satisfaction Problem), nơi mỗi bước di chuyển là một "assignment" và việc kiểm tra chu kỳ là một dạng "constraint".
-    *   **Tính chất:** Hoàn chỉnh (nếu có giới hạn độ sâu phù hợp hoặc không có chu kỳ), không tối ưu (tìm đường đi đầu tiên).
-    *   **Nhược điểm:** Dễ bị kẹt trong đệ quy sâu hoặc khám phá không gian lớn nếu không có heuristic hoặc cắt tỉa hiệu quả.
+1.  **Backtracking Search (CSP Style):** Một hình thức tìm kiếm theo chiều sâu với quay lui để tìm đường đi trong không gian trạng thái.
+2.  **Genetic Algorithm (GA):** Thuật toán tối ưu hóa dựa trên tiến hóa để tìm chuỗi hành động. (Lưu ý: Triển khai hiện tại tìm kế hoạch từ một trạng thái bắt đầu cụ thể, không phải tập niềm tin).
 
-### IV. Thuật toán Di truyền (Genetic Algorithm - GA)
+## Cách sử dụng
 
-GA là một thuật toán tối ưu hóa dựa trên quá trình tiến hóa tự nhiên. Trong ứng dụng này, nó được sử dụng để tìm một chuỗi hành động giải puzzle.
-
-1.  **Genetic Algorithm (GA):**
-    *   **Nguyên lý:** Duy trì một quần thể các "cá thể" (mỗi cá thể là một chuỗi hành động). Các cá thể được đánh giá bằng hàm "fitness" (độ tốt của trạng thái cuối cùng sau khi thực hiện chuỗi hành động). Quần thể tiến hóa qua các thế hệ bằng cách chọn lọc các cá thể tốt hơn, lai ghép (crossover) các chuỗi hành động, và đột biến (mutation) ngẫu nhiên các hành động.
-    *   **Tính chất:** Là thuật toán tìm kiếm xác suất (probabilistic search). Không hoàn chỉnh, không tối ưu.
-    *   **Ưu điểm:** Có thể tìm được lời giải trong không gian tìm kiếm rất lớn mà các thuật toán tìm kiếm đồ thị truyền thống không hiệu quả.
-    *   **Nhược điểm:** Không đảm bảo tìm được lời giải, có thể dừng lại ở một giải pháp không tối ưu hoặc không tìm được giải pháp nào cả. Cần nhiều tham số điều chỉnh (kích thước quần thể, tỉ lệ đột biến, v.v.). *Lưu ý: Trong code này, GA được triển khai để tìm kế hoạch từ một trạng thái bắt đầu *cụ thể* (không phải từ tập niềm tin).*
-
+1.  Chạy file script Python.
+2.  Giao diện chính hiển thị "Start", "End" và "Current" puzzle grids.
+3.  Sử dụng các nút trong phần "Algorithms" để chạy các thuật toán tìm kiếm khác nhau.
+4.  Sử dụng thanh trượt "Speed" để điều chỉnh tốc độ animation. Nút "Stop" để dừng animation.
+5.  Sử dụng các nút trong phần "Setup":
+    *   **Set Start:** Mở cửa sổ để nhập trạng thái bắt đầu tùy chỉnh.
+    *   **Set Goal:** Mở cửa sổ để nhập trạng thái đích tùy chỉnh.
+    *   **Set Belief:** Mở cửa sổ để quản lý (thêm, xóa, chỉnh sửa, đặt lại mặc định) tập hợp các trạng thái trong "Initial Belief Set" cho các thuật toán Sensorless/Belief Space.
 
 ## Cài đặt
 
-Ứng dụng chỉ yêu cầu thư viện Tkinter (thường có sẵn trong cài đặt Python chuẩn) và các module Python tích hợp sẵn (`heapq`, `collections`, `random`, `threading`, `copy`, `math`, `sys`).
+Ứng dụng chỉ yêu cầu các module Python tích hợp sẵn (`tkinter`, `heapq`, `collections`, `random`, `threading`, `copy`, `functools`, `math`, `sys`).
 
 Không cần cài đặt thêm thư viện bên ngoài.
 
+## Yêu cầu hệ thống
+
+*   Python 3.x
+*   Hệ điều hành hỗ trợ Tkinter (Windows, macOS, Linux)
+
+---
