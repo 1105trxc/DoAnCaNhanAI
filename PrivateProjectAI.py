@@ -18,16 +18,11 @@ goal_state_default = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 current_start_state = copy.deepcopy(start_state_default)
 current_goal_state = copy.deepcopy(goal_state_default)
 
-# --- Helper Functions ---
 def find_zero(state):
-    """Finds the position (row, col) of the empty tile (0). Works for list or tuple states."""
+    """Finds the position (row, col) of the empty tile (0)."""
     for i, row in enumerate(state):
-        try:
-            row_list = list(row) if isinstance(row, tuple) else row
-            j = row_list.index(0)
-            return i, j
-        except ValueError:
-            continue
+        if 0 in row:
+            return i, row.index(0)
     return None
 
 def get_neighbors(state):
@@ -46,195 +41,208 @@ def get_neighbors(state):
     return neighbors
 
 def state_to_tuple(state):
-    """Converts a state (list[list[int]] or tuple[tuple[int]]) to a tuple (tuple[tuple[int]]) for hashing."""
-    if isinstance(state, tuple): return state
+    """Converts a state to a tuple for hashing."""
     return tuple(tuple(row) for row in state)
 
-def tuple_to_state(state_tuple):
-    """Converts a state tuple (tuple[tuple[int]]) to a list (list[list[int]])."""
-    if isinstance(state_tuple, list): return state_tuple
-    return [list(row) for row in state_tuple]
-
 def heuristic(state, goal):
-    """Calculates the Manhattan distance heuristic. Works for list or tuple states."""
+    """Calculates the Manhattan distance heuristic."""
     distance = 0
-    goal_list = tuple_to_state(goal) if isinstance(goal, tuple) else goal
     goal_positions = {}
     for r in range(ROWS):
         for c in range(COLS):
-            val = goal_list[r][c]
+            val = goal[r][c]
             if val != 0:
                 goal_positions[val] = (r, c)
-
-    state_list = tuple_to_state(state) if isinstance(state, tuple) else state
-
     for r in range(ROWS):
         for c in range(COLS):
-            val = state_list[r][c]
+            val = state[r][c]
             if val != 0 and val in goal_positions:
                 goal_r, goal_c = goal_positions[val]
                 distance += abs(r - goal_r) + abs(c - goal_c)
     return distance
 
-# --- Action Definitions ---
+def tuple_to_state(state):
+    if isinstance(state, (list, tuple)) and len(state) == 3 and all(isinstance(row, (list, tuple)) and len(row) == 3 for row in state):
+        return [list(row) for row in state]
+    if isinstance(state, (list, tuple)) and len(state) == 9:
+        return [list(state[i*3:(i+1)*3]) for i in range(3)]
+    raise ValueError(f"Invalid state format: {state}, expected a 3x3 matrix or a tuple of 9 elements")
+
+def is_solvable(state, goal_state):
+    """Checks if the state is solvable relative to the goal state."""
+    flat_state = [val for row in state for val in row if val != 0]
+    inversions = sum(1 for i in range(len(flat_state)) for j in range(i + 1, len(flat_state)) if flat_state[i] > flat_state[j])
+    blank_row = find_zero(state)[0]
+    goal_blank_row = find_zero(goal_state)[0]
+    return (inversions % 2) == ((3 - blank_row) % 2) and (inversions % 2) == ((3 - goal_blank_row) % 2)
+
+
 ACTION_MAP = {
     'UP': (-1, 0),
     'DOWN': (1, 0),
     'LEFT': (0, -1),
     'RIGHT': (0, 1)
 }
-ACTION_LIST = ['UP', 'DOWN', 'LEFT', 'RIGHT']
+ACTION_LIST = ['RIGHT', 'LEFT','DOWN','UP']
 
-def apply_action(state, action_name):
-    """
-    Applies an action to a state (list or tuple).
-    Returns the resulting state (same type) or None if invalid.
-    Handles state conversion internally.
-    """
-    is_tuple = isinstance(state, tuple)
-    state_list = tuple_to_state(state)
+initial_belief_state_tuples = {
+    state_to_tuple([[1, 2, 3], [4, 5, 6], [7, 0, 8]]),
+    state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 8, 6]]),
+    state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 6, 8]])
+}
 
-    zero_pos = find_zero(state_list)
-    if zero_pos is None: return None
+def generate_initial_belief_set(start_state):
+    """Returns the predefined initial belief set from initial_belief_state_tuples."""
+    belief_set = [tuple_to_state(state_tuple) for state_tuple in initial_belief_state_tuples]
+    return belief_set
 
-    r, c = zero_pos
-    if action_name not in ACTION_MAP: return None
+def apply_action(state, action):
+    state_matrix = tuple_to_state(state)
+    blank_pos = None
+    for r in range(3):
+        for c in range(3):
+            if state_matrix[r][c] == 0:
+                blank_pos = (r, c)
+                break
+        if blank_pos:
+            break
 
-    dr, dc = ACTION_MAP[action_name]
-    nr, nc = r + dr, c + dc
+    if blank_pos is None:
+        return None
 
-    if 0 <= nr < ROWS and 0 <= nc < COLS:
-        new_state_list = [row[:] for row in state_list]
-        new_state_list[r][c], new_state_list[nr][nc] = new_state_list[nr][nc], new_state_list[r][c]
-        return state_to_tuple(new_state_list) if is_tuple else new_state_list
+    r, c = blank_pos
+    new_r, new_c = r, c
+
+    if action == 'UP':
+        new_r = r - 1
+    elif action == 'DOWN':
+        new_r = r + 1
+    elif action == 'LEFT':
+        new_c = c - 1
+    elif action == 'RIGHT':
+        new_c = c + 1
     else:
         return None
 
-initial_belief_state_tuples = {
-    state_to_tuple(start_state_default), # The actual default start state
-    state_to_tuple([[2, 6, 5], [8, 7, 0], [4, 3, 1]]), # Zero at (1,2)
-    state_to_tuple([[2, 6, 0], [8, 7, 5], [4, 3, 1]]), # Zero at (0,2)
-    state_to_tuple([[2, 6, 5], [8, 0, 7], [4, 3, 1]]), # Zero at (1,1)
-    state_to_tuple([[2, 0, 5], [8, 6, 7], [4, 3, 1]]), # Zero at (0,1)
-    state_to_tuple([[0, 2, 5], [8, 6, 7], [4, 3, 1]]), # Zero at (0,0)
-    state_to_tuple([[2, 6, 5], [4, 8, 7], [0, 3, 1]]), # Zero at (2,0)
-    state_to_tuple([[2, 6, 5], [4, 3, 7], [8, 0, 1]]), # Zero at (2,1)
-    state_to_tuple([[2, 6, 5], [4, 3, 1], [8, 7, 0]]), # Zero at (2,2)
-    state_to_tuple([[0, 6, 5], [2, 3, 1], [4, 8, 7]]), # Zero at (0,0)
-    state_to_tuple([[2, 0, 5], [6, 3, 1], [4, 8, 7]]), # Zero at (0,1)
-    state_to_tuple([[2, 5, 0], [6, 3, 1], [4, 8, 7]]), # Zero at (0,2)
-    state_to_tuple([[2, 5, 6], [0, 3, 1], [4, 8, 7]]), # Zero at (1,0)
-    state_to_tuple([[2, 5, 6], [4, 3, 1], [0, 8, 7]]), # Zero at (2,0)
-    state_to_tuple([[2, 5, 6], [4, 3, 1], [8, 7, 0]]), # Zero at (2,1)
-    state_to_tuple([[2, 5, 6], [4, 0, 1], [8, 3, 7]]), # Zero at (1,1)
-    state_to_tuple([[2, 5, 6], [4, 3, 1], [7, 0, 8]]), # Zero at (2,2)
-    state_to_tuple([[2, 5, 6], [4, 3, 1], [7, 8, 0]]), # Zero at (2,2)
-}
+    if 0 <= new_r < 3 and 0 <= new_c < 3:
+        state_matrix[r][c] = state_matrix[new_r][new_c]
+        state_matrix[new_r][new_c] = 0
+        return state_matrix
+    return None
 
-def sensorless_search_bfs(start_state_dummy, goal_state):
-    """
-    Sensorless Search using BFS on Belief Space.
-    """
-    print("Running Sensorless Search (BFS on Belief Space)...")
-    initial_belief_state_set = initial_belief_state_tuples
-    start_time = time.time()
-    belief_states_explored = 0
-    goal_state_tuple = state_to_tuple(goal_state)
-    initial_belief_frozenset = frozenset(initial_belief_state_set)
-
-    if not initial_belief_frozenset:
-        print("Initial belief state set is empty.")
-        return None, 0.0, 0
-    if len(initial_belief_frozenset) == 1 and goal_state_tuple in initial_belief_frozenset:
-         print("Goal reached immediately (initial belief is the goal belief state).")
-         return [], 0.0, 1 # 0 actions needed
-
-    queue = deque([(initial_belief_frozenset, [])])
-    visited = {initial_belief_frozenset}
-
-    while queue:
-        current_belief_frozenset, actions = queue.popleft()
-        belief_states_explored += 1
-
-        for action in ACTION_LIST:
-            next_belief_state_set = set()
-            possible_for_all = True
-            # Apply action to *every* state in the current belief
-            for state_tuple in current_belief_frozenset:
-                next_state_tuple = apply_action(state_tuple, action) # apply_action handles tuple
-                if next_state_tuple is None:
-                    # If action is invalid for *any* state, it's invalid for the belief
-                    possible_for_all = False
-                    break
-                next_belief_state_set.add(next_state_tuple)
-
-            # Only proceed if the action was valid for all states AND it resulted in a new belief state
-            if possible_for_all and next_belief_state_set:
-                next_belief_frozenset = frozenset(next_belief_state_set)
-
-                # Check if this next belief state has been visited before
-                if next_belief_frozenset not in visited:
-                    visited.add(next_belief_frozenset)
-                    new_actions = actions + [action]
-                    queue.append((next_belief_frozenset, new_actions))
-
-                    # Check goal condition: the new belief state contains *only* the goal state
-                    if len(next_belief_frozenset) == 1 and goal_state_tuple in next_belief_frozenset:
-                        time_taken = time.time() - start_time
-                        print(f"Sensorless (BFS): Plan found of length {len(new_actions)}.")
-                        return new_actions, time_taken, belief_states_explored
-
-    time_taken = time.time() - start_time
-    print("Sensorless (BFS): Failed to find a plan.")
-    return None, time_taken, belief_states_explored
-
-
-def dfs_belief_search(start_state_dummy, goal_state):
+def dfs_belief_search(start_state, goal_state):
     print("Running DFS on Belief Space (Sensorless)...")
-    initial_belief_state_set = initial_belief_state_tuples
-    start_time = time.time()
-    belief_states_explored = 0
-    goal_state_tuple = state_to_tuple(goal_state)
-    initial_belief_frozenset = frozenset(initial_belief_state_set)
+    initial_belief_set = generate_initial_belief_set(start_state)
+    print("Initial belief states:")
+    for state in initial_belief_set:
+        print(state)
+    print()
 
-    if not initial_belief_frozenset: return None, 0.0, 0
-    if len(initial_belief_frozenset) == 1 and goal_state_tuple in initial_belief_frozenset:
-        print("Goal reached immediately (initial belief is the goal belief state).")
-        return [], 0.0, 1
-
-    stack = [(initial_belief_frozenset, [])]
-    visited = {initial_belief_frozenset}
+    goal_matrix = tuple_to_state(goal_state)
+    goal_tuple = tuple(state_to_tuple(goal_matrix))
+    visited = set()
+    stack = [(initial_belief_set, [])]  # (belief_set, actions)
+    belief_state_count = 0
 
     while stack:
-        current_belief_frozenset, actions = stack.pop()
-        belief_states_explored += 1
+        current_belief_set, actions = stack.pop()
+        belief_state_count += 1
 
-        # Iterate actions in reverse for typical DFS exploration order
-        for action in reversed(ACTION_LIST):
-            next_belief_state_set = set()
-            possible_for_all = True
-            for state_tuple in current_belief_frozenset:
-                next_state_tuple = apply_action(state_tuple, action)
-                if next_state_tuple is None:
-                    possible_for_all = False
+        belief_set_tuple = tuple(sorted([tuple(state_to_tuple(state)) for state in current_belief_set]))
+        if belief_set_tuple in visited:
+            continue
+        visited.add(belief_set_tuple)
+
+        print(f"DFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, actions so far={actions}")
+        print("Current belief states:")
+        for state in current_belief_set:
+            print(state)
+
+        all_goal = all(tuple(state_to_tuple(state)) == goal_tuple for state in current_belief_set)
+        if all_goal:
+            print(f"Sensorless (DFS): Found a plan with actions: {actions}")
+            return actions, time.time(), belief_state_count
+
+        for action in ['RIGHT', 'LEFT', 'DOWN', 'UP']:
+            print(f"Trying action: {action}")
+            new_belief_set = set()
+            action_failed = False
+
+            for state in current_belief_set:
+                print(f"Applying {action} to {state}")
+                new_state = apply_action(state, action)
+                if new_state is None:
+                    print(f"Action {action} failed for state {state}")
+                    action_failed = True
                     break
-                next_belief_state_set.add(next_state_tuple)
+                print(f"Result: {new_state}")
+                new_belief_set.add(tuple(state_to_tuple(new_state)))
 
-            if possible_for_all and next_belief_state_set:
-                next_belief_frozenset = frozenset(next_belief_state_set)
-                if next_belief_frozenset not in visited:
-                    visited.add(next_belief_frozenset)
-                    new_actions = actions + [action]
-                    stack.append((next_belief_frozenset, new_actions))
+            if not action_failed:
+                new_belief_set = [tuple_to_state(state) for state in new_belief_set]
+                print(f"New belief states after {action}: {new_belief_set}")
+                stack.append((new_belief_set, actions + [action]))
+            print()
 
-                    if len(next_belief_frozenset) == 1 and goal_state_tuple in next_belief_frozenset:
-                        time_taken = time.time() - start_time
-                        print(f"Sensorless (DFS): Plan found of length {len(new_actions)}.")
-                        return new_actions, time_taken, belief_states_explored
-
-    time_taken = time.time() - start_time
     print("Sensorless (DFS): Failed to find a plan.")
-    return None, time_taken, belief_states_explored
+    return None, time.time(), belief_state_count
+
+def bfs_belief_search(start_state, goal_state):
+    print("Running Sensorless Search (BFS on Belief Space)...")
+    initial_belief_set = generate_initial_belief_set(start_state)
+    print("Initial belief states:")
+    for state in initial_belief_set:
+        print(state)
+    print()
+
+    goal_matrix = tuple_to_state(goal_state)
+    goal_tuple = tuple(state_to_tuple(goal_matrix))
+    visited = set()
+    queue = deque([(initial_belief_set, [])])  # (belief_set, actions)
+    belief_state_count = 0
+
+    while queue:
+        current_belief_set, actions = queue.popleft()
+        belief_state_count += 1
+
+        belief_set_tuple = tuple(sorted([tuple(state_to_tuple(state)) for state in current_belief_set]))
+        if belief_set_tuple in visited:
+            continue
+        visited.add(belief_set_tuple)
+
+        print(f"BFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, actions so far={actions}")
+        print("Current belief states:")
+        for state in current_belief_set:
+            print(state)
+
+        all_goal = all(tuple(state_to_tuple(state)) == goal_tuple for state in current_belief_set)
+        if all_goal:
+            print(f"Sensorless (BFS): Found a plan with actions: {actions}")
+            return actions, time.time(), belief_state_count
+
+        for action in ['RIGHT', 'LEFT', 'DOWN', 'UP']:
+            print(f"Trying action: {action}")
+            new_belief_set = set()
+            action_failed = False
+
+            for state in current_belief_set:
+                print(f"Applying {action} to {state}")
+                new_state = apply_action(state, action)
+                if new_state is None:
+                    print(f"Action {action} failed for state {state}")
+                    action_failed = True
+                    break
+                print(f"Result: {new_state}")
+                new_belief_set.add(tuple(state_to_tuple(new_state)))
+
+            if not action_failed:
+                new_belief_set = [tuple_to_state(state) for state in new_belief_set]
+                print(f"New belief states after {action}: {new_belief_set}")
+                queue.append((new_belief_set, actions + [action]))
+            print()
+
+    print("Sensorless (BFS): Failed to find a plan.")
+    return None, time.time(), belief_state_count
 
 def dfs(start, goal):
     """Depth-First Search (State Space)."""
@@ -361,65 +369,47 @@ def greedy_best_first(start, goal):
     print("Greedy: Failed to find a solution.")
     return None, time.time() - start_time, nodes_visited_count
 
-def dls(current_state, goal, depth_limit, path, visited_in_path, nodes_visited_list):
-    """Recursive helper for Limited Depth Search."""
-    nodes_visited_list[0] += 1
-    current_tuple = state_to_tuple(current_state)
-
-    if current_state == goal: return path + [current_state], True
-    if depth_limit == 0: return None, False
-
-    visited_in_path_copy = visited_in_path.copy()
-    visited_in_path_copy.add(current_tuple)
-
-    for neighbor, _ in get_neighbors(current_state):
-        neighbor_tuple = state_to_tuple(neighbor)
-        if neighbor_tuple not in visited_in_path_copy:
-             result_path, found_goal = dls(
-                 neighbor, goal, depth_limit - 1, path + [current_state],
-                 visited_in_path_copy, nodes_visited_list
-             )
-             if found_goal: return result_path, True
-
-    return None, False
-
 def ids(start, goal):
-    """Iterative Deepening Depth-First Search (State Space)."""
     print("Running IDS (State Space)...")
-    depth = 0
-    total_nodes_visited = 0
     start_time = time.time()
+    goal_tuple = state_to_tuple(goal) 
 
-    original_recursion_limit = sys.getrecursionlimit()
-    new_limit = 5000
-    limit_changed = False
-    if new_limit > original_recursion_limit:
-        try:
-            sys.setrecursionlimit(new_limit)
-            limit_changed = True
-        except Exception as e: print(f"Could not set recursion limit for IDS: {e}")
+    total_nodes_visited = 0
+    depth_limit = 0
 
-    try:
-        while True:
-            nodes_visited_list = [0]
-            result_path, found_goal = dls(start, goal, depth, [], set(), nodes_visited_list)
-            total_nodes_visited += nodes_visited_list[0]
+    max_possible_depth = 50
 
-            if found_goal:
-                print(f"IDS: Solution found at depth {depth}.")
-                return result_path, time.time() - start_time, total_nodes_visited
-            if depth > 30: # Safety break
-                 print(f"IDS depth limit {depth} reached.")
-                 break
-            depth += 1
-    except RecursionError:
-        print(f"IDS Failed: Maximum recursion depth exceeded ({sys.getrecursionlimit()}).")
-        return None, time.time() - start_time, total_nodes_visited
-    finally:
-        if limit_changed: sys.setrecursionlimit(original_recursion_limit)
+    while depth_limit <= max_possible_depth:
 
-    print("IDS: Failed to find a solution.")
-    return None, time.time() - start_time, total_nodes_visited
+        nodes_visited_this_depth = 0 
+        stack = deque([(start, [copy.deepcopy(start)], 0, {state_to_tuple(start)})])
+
+        while stack:
+
+            current_state, path, current_depth_in_this_iteration, visited_in_path = stack.pop()
+            nodes_visited_this_depth += 1 
+            if current_state == goal:
+                print(f"IDS: Solution found at depth {current_depth_in_this_iteration}.")
+                total_nodes_visited += nodes_visited_this_depth 
+
+                return path, time.time() - start_time, total_nodes_visited
+
+
+            if current_depth_in_this_iteration >= depth_limit:
+                continue
+
+            for neighbor_matrix, _ in reversed(get_neighbors(current_state)):
+                neighbor_tuple = state_to_tuple(neighbor_matrix)
+
+                if neighbor_tuple not in visited_in_path:
+
+                    new_visited_in_path = visited_in_path.copy()
+                    new_visited_in_path.add(neighbor_tuple)
+
+                    stack.append((neighbor_matrix, path + [neighbor_matrix], current_depth_in_this_iteration + 1, new_visited_in_path))
+        depth_limit += 1
+    print(f"IDS: Max possible depth ({max_possible_depth}) reached without finding a solution.")
+    return None, time.time() - start_time, total_nodes_visited 
 
 
 def ida_star_search(node, g_cost, threshold, path, goal, visited_in_path, nodes_visited_list):
@@ -712,74 +702,86 @@ def beam_search(start_state, goal_state, beam_width=5):
     print(f"Beam Search: Failed - Beam became empty. Beam width={beam_width}")
     return None, time_taken, nodes_expanded
 
+def get_successors(state):
+    """Returns a list of successor states for AND-OR search."""
+    zero_pos = find_zero(state)
+    if zero_pos is None:
+        return []
+    r, c = zero_pos
+    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # Right, Left, Down, Up
+    successors = []
+    for dr, dc in directions:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < ROWS and 0 <= nc < COLS:
+            new_state = [row[:] for row in state]
+            new_state[r][c], new_state[nr][nc] = new_state[nr][nc], new_state[r][c]
+            successors.append(new_state)
+    return successors
 
-# --- CSP-style Backtracking ---
-def _backtracking_recursive_csp_style(current_state, goal_state, path, visited_in_path, nodes_visited_list, start_time, time_limit):
-    """Recursive helper for CSP-style Backtracking."""
-    nodes_visited_list[0] += 1
-    current_tuple = state_to_tuple(current_state)
+def is_valid_state(state):
+    """Check if the state contains all numbers from 0 to 8 exactly once."""
+    values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
+    return values == set(range(ROWS * COLS))
 
-    if time.time() - start_time > time_limit: return "Timeout", False
-    if current_state == goal_state: return path, True
-
-    visited_in_path_copy = visited_in_path.copy()
-    visited_in_path_copy.add(current_tuple)
-
-    for neighbor, _ in get_neighbors(current_state):
-        neighbor_tuple = state_to_tuple(neighbor)
-        if neighbor_tuple not in visited_in_path_copy:
-            result, found_goal = _backtracking_recursive_csp_style(
-                neighbor, goal_state, path + [neighbor], visited_in_path_copy,
-                nodes_visited_list, start_time, time_limit
-            )
-            if found_goal or result == "Timeout": return result, found_goal
-
-    return None, False
-
-def backtracking_search_csp(start, goal, time_limit=30):
-    """Backtracking Search (CSP Style) to find a path from start to goal."""
-    print("Running Backtracking Search (CSP Style)...")
+def and_or_search(state, goal_state, get_successors, node_type='OR', visited=None, find_all_solutions=False):
+    """AND-OR search implementation for validation."""
+    if visited is None:
+        visited = set()
     start_time = time.time()
-    nodes_visited_list = [0]
-    path_init = [copy.deepcopy(start)]
-    visited_init = set()
+    nodes_visited = 0
+    all_solutions = [] if find_all_solutions else None  # Lưu trữ tất cả các giải pháp nếu cần
 
-    original_recursion_limit = sys.getrecursionlimit()
-    new_limit = 5000
-    limit_changed = False
-    if new_limit > original_recursion_limit:
-        try:
-            sys.setrecursionlimit(new_limit)
-            limit_changed = True
-        except Exception as e: print(f"Could not set recursion limit: {e}")
+    def recursive_or_and_search(state, goal_state, get_successors, node_type, visited):
+        nonlocal nodes_visited
+        nodes_visited += 1
+        state_tuple = state_to_tuple(state)
 
-    solution_path = None
-    status = "Unknown"
-    try:
-        result, found_goal = _backtracking_recursive_csp_style(
-            start, goal, path_init, visited_init, nodes_visited_list, start_time, time_limit
-        )
+        # Điều kiện dừng: Đạt trạng thái mục tiêu và hợp lệ
+        if state == goal_state and is_valid_state(state):
+            return [state]
+        
+        # Kiểm tra trạng thái đã thăm
+        if state_tuple in visited:
+            return None
+        visited.add(state_tuple)
 
-        if result == "Timeout": status = "Timeout"
-        elif found_goal:
-            status = "Solution Found"
-            solution_path = result
-        else: status = "Not Found"
+        if node_type == 'OR':
+            for next_state in get_successors(state):
+                result = recursive_or_and_search(next_state, goal_state, get_successors, 'AND', visited.copy())
+                if result:
+                    return [state] + result
+        else:  # node_type == 'AND'
+            all_results = [state]
+            successors = get_successors(state)
+            if not successors:
+                return None
+            for next_state in successors:
+                result = recursive_or_and_search(next_state, goal_state, get_successors, 'OR', visited.copy())
+                if not result:
+                    return None
+                all_results += result
+            return all_results
 
-    except RecursionError:
-        print(f"Backtracking Search (CSP Style) Failed: Max recursion depth exceeded ({sys.getrecursionlimit()}).")
-        status = "Recursion Limit Exceeded"
-        solution_path = None
-    except Exception as e:
-        print(f"Backtracking Search (CSP Style) Error: {e}")
-        status = f"Error: {e}"
-        solution_path = None
-    finally:
-        if limit_changed: sys.setrecursionlimit(original_recursion_limit)
+        return None
 
-    time_taken = time.time() - start_time
-    print(f"Backtracking Search (CSP Style) completed with status: {status}")
-    return solution_path, time_taken, nodes_visited_list[0]
+    while True:
+        result = recursive_or_and_search(state, goal_state, get_successors, node_type, visited.copy())
+        if result:
+            if find_all_solutions:
+                all_solutions.append(result)
+                print("Solution found:")
+                for step in result:
+                    for row in step:
+                        print(row)
+                    print()
+                # Xóa trạng thái cuối cùng khỏi `visited` để tiếp tục tìm kiếm
+                visited.discard(state_to_tuple(result[-1]))
+            else:
+                return result, time.time() - start_time, nodes_visited
+        else:
+            break
+
+    return all_solutions, time.time() - start_time, nodes_visited if find_all_solutions else None
 
 def calculate_fitness(final_state, goal_state, is_valid_path):
     """Calculates fitness based on inverse Manhattan distance to goal."""
@@ -798,13 +800,13 @@ def create_initial_population(size, start_state, max_initial_len=20):
     while len(population) < size and attempts < max_attempts:
         attempts += 1
         seq_len = random.randint(1, max_initial_len)
-        sequence = [random.choice(ACTION_LIST) for _ in range(seq_len)]
+        sequence = [random.choice(ACTION_LIST) for _ in range(seq_len)]  # Sửa lỗi: Thêm `range` để lặp
         # Simple check: ensure at least the first move is valid from the *known* start state
         if sequence and apply_action(start_state_tuple, sequence[0]) is not None:
-             population.append(sequence)
+            population.append(sequence)
 
-    while len(population) < size: # Ensure population size
-         population.append([random.choice(ACTION_LIST)])
+    while len(population) < size:  # Ensure population size
+        population.append([random.choice(ACTION_LIST)])
 
     return population
 
@@ -857,7 +859,7 @@ def mutate(sequence, mutation_rate=0.1):
             del mutated_sequence[idx]
     return mutated_sequence
 
-def genetic_algorithm(start_state, goal_state, population_size=100, max_generations=100,
+def genetic_algorithm(start_state, goal_state, population_size=200, max_generations=50,
                       mutation_rate=0.1, tournament_size=5, elitism_count=5, max_sim_len=100):
     """Genetic Algorithm for finding a puzzle solution (State Space)."""
     print("Running Genetic Algorithm...")
@@ -921,6 +923,72 @@ def genetic_algorithm(start_state, goal_state, population_size=100, max_generati
     return best_overall_sim_path, time_taken, total_evaluations
 
 
+# --- Backtracking Logic ---
+
+def backtracking(goal_state, algorithm):
+    """Backtracking to find a valid start state for the given algorithm."""
+    def is_valid_state(state):
+        """Check if the state contains all numbers from 0 to 8 exactly once."""
+        values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
+        return values == set(range(ROWS * COLS))
+
+    def backtrack(state, used, i=0, j=0):
+        """Recursive helper function for backtracking."""
+        print(f"Backtracking step: Filling cell ({i}, {j}) with current state:")
+        for row in state:
+            print(row)
+        print()
+
+        if i == ROWS:  # All rows filled
+            if is_valid_state(state):
+                print("Valid state found:")
+                for row in state:
+                    print(row)
+                return state
+            return None
+
+        # Move to the next cell
+        ni, nj = (i, j + 1) if j < COLS - 1 else (i + 1, 0)
+
+        # Iterate values from 0 to 8 in fixed order
+        for num in range(ROWS * COLS):
+            if num not in used:
+                state[i][j] = num
+                used.add(num)
+                result = backtrack(state, used, ni, nj)
+                if result:
+                    return result
+                used.remove(num)
+                state[i][j] = 0  # Backtrack
+
+        return None
+
+    def find_valid_state():
+        """Iteratively attempt to fill the matrix until a valid state is found."""
+        while True:
+            state = [[0] * COLS for _ in range(ROWS)]
+            print("Attempting to fill the matrix...")
+            result = backtrack(state, set())
+            if result:
+                return result
+            print("Retrying...")
+
+    if algorithm == and_or_search:
+        print("Using AND-OR search for Backtracking...")
+        initial_state = [[0] * COLS for _ in range(ROWS)]
+        result, _, _ = and_or_search(initial_state, goal_state, get_successors, find_all_solutions=False)
+        if result:
+            print("AND-OR search succeeded:")
+            for step in result:
+                print(step)
+            return result[0]  # Return the initial state from the AND-OR search result
+        else:
+            print("AND-OR search failed.")
+            return None
+    else:
+        print("Using standard Backtracking...")
+        return find_valid_state()
+    
 # --- GUI Class ---
 class PuzzleGUI:
     def __init__(self, master):
@@ -952,7 +1020,7 @@ class PuzzleGUI:
             "#FF5757", "#42D6A4", "#FF9F43", "#9370DB", "#FFD700",
             "#32CD32", "#FF4500", "#00BFFF", "#FF1493", "#778899",
             "#FF6347", "#20B2AA", "#FFA07A", "#D2691E", "#4682B4",
-             "#90EE90", "#ADD8E6", "#FFB6C1", "#8B008B", "#4B0082"
+            "#90EE90", "#ADD8E6", "#FFB6C1", "#8B008B", "#4B0082"
         ]
 
         self.animation_running = False
@@ -977,11 +1045,10 @@ class PuzzleGUI:
         tk.Label(algo_frame, text="Algorithms:", font=self.button_font, bg=self.BG_COLOR).pack(side=tk.LEFT, padx=(0,5), anchor='n')
 
         self.buttons = []
-        # Ordered: State Space first, then Belief Space, then Others
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                         "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam",
-                         "BFS_Belief", "DFS_Belief",
-                         "GA", "Backtracking"] # GA and Backtracking don't fit neatly into state/belief
+                        "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AOSerach",
+                        "BFS_Belief", "DFS_Belief",
+                        "GA", "Backtracking"]
         beam_width_default = 5
 
         algo_map = {
@@ -996,11 +1063,12 @@ class PuzzleGUI:
             "SteepestHC": steepest_ascent_hill_climbing,
             "RandomHC": random_hill_climbing,
             "SA": simulated_annealing,
-            "Beam": partial(beam_search, beam_width=beam_width_default), # Use partial for beam width
-            "BFS_Belief": sensorless_search_bfs, # Sensorless calls BFS Belief
+            "Beam": partial(beam_search, beam_width=beam_width_default),
+            "AOSerach": partial(and_or_search, get_successors=get_successors),
+            "BFS_Belief": bfs_belief_search,
             "DFS_Belief": dfs_belief_search,
             "GA": genetic_algorithm,
-            "Backtracking": backtracking_search_csp
+            "Backtracking": backtracking
         }
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
@@ -1020,8 +1088,8 @@ class PuzzleGUI:
             cmd = partial(self.run_algorithm_thread, algo, label)
 
             button = tk.Button(current_row_frame, text=label, font=self.button_font,
-                               bg=color, fg=self.BUTTON_FG_COLOR, width=12, height=1,
-                               command=cmd, relief=tk.RAISED, borderwidth=2)
+                            bg=color, fg=self.BUTTON_FG_COLOR, width=12, height=1,
+                            command=cmd, relief=tk.RAISED, borderwidth=2)
             button.pack(side=tk.LEFT, padx=2, pady=1)
             self.buttons.append(button)
 
@@ -1029,13 +1097,13 @@ class PuzzleGUI:
         speed_stop_frame.pack(side=tk.RIGHT, padx=10, anchor='n')
         tk.Label(speed_stop_frame, text="Speed:", font=self.button_font, bg=self.BG_COLOR).pack(side=tk.LEFT, padx=(0,2))
         self.speed_slider = tk.Scale(speed_stop_frame, from_=0.1, to=1.5, resolution=0.1,
-                                     orient=tk.HORIZONTAL, variable=self.animation_speed,
-                                     bg=self.BG_COLOR, length=100, showvalue=0)
+                                    orient=tk.HORIZONTAL, variable=self.animation_speed,
+                                    bg=self.BG_COLOR, length=100, showvalue=0)
         self.speed_slider.pack(side=tk.LEFT, padx=5)
         self.stop_button = tk.Button(speed_stop_frame, text="Stop", font=self.button_font,
-                                     bg="#DC143C", fg=self.BUTTON_FG_COLOR, width=5, height=1,
-                                     command=self.stop_animation, relief=tk.RAISED, borderwidth=2,
-                                     state=tk.DISABLED)
+                                    bg="#DC143C", fg=self.BUTTON_FG_COLOR, width=5, height=1,
+                                    command=self.stop_animation, relief=tk.RAISED, borderwidth=2,
+                                    state=tk.DISABLED)
         self.stop_button.pack(side=tk.LEFT, padx=5)
 
         self.top_grids_frame = tk.Frame(self.main_display_frame, bg=self.BG_COLOR)
@@ -1057,25 +1125,27 @@ class PuzzleGUI:
         self.current_canvas_frame.pack(side=tk.LEFT, padx=30, expand=True)
 
         self.detail_frame = tk.Frame(self.bottom_frame, bg=self.DETAIL_BG, bd=1, relief=tk.SOLID,
-                                     width=200, height=self.canvas_height + self.grid_label_font.metrics('linespace') + 5)
+                                    width=200, height=self.canvas_height + self.grid_label_font.metrics('linespace') + 5)
         self.detail_frame.pack(side=tk.LEFT, padx=30, pady=0, anchor='n', fill=tk.Y)
         self.detail_frame.pack_propagate(False)
 
         tk.Label(self.detail_frame, text="Result Details", font=self.grid_label_font, bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR).pack(pady=5)
         self.status_display_label = tk.Label(self.detail_frame, textvariable=self.algorithm_status_text, font=self.detail_font,
-                                   bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
+                                bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
         self.status_display_label.pack(pady=5, padx=10, anchor='w')
         self.steps_display_label = tk.Label(self.detail_frame, text="Path Steps: -", font=self.detail_font,
-                                   bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
+                                bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
         self.steps_display_label.pack(pady=5, padx=10, anchor='w')
         self.time_display_label = tk.Label(self.detail_frame, text="Time: -", font=self.detail_font,
-                                   bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
+                                bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
         self.time_display_label.pack(pady=5, padx=10, anchor='w')
         self.nodes_display_label = tk.Label(self.detail_frame, text="Count: -", font=self.detail_font,
-                                   bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
+                                bg=self.DETAIL_BG, fg=self.DETAIL_TEXT_COLOR, wraplength=180)
         self.nodes_display_label.pack(pady=5, padx=10, anchor='w')
 
+        print(f"Updating initial grid with: {current_start_state}")
         self.update_grid(self.initial_canvas, current_start_state, self.START_END_TILE_COLOR)
+        print(f"Updating goal grid with: {current_goal_state}")
         self.update_grid(self.goal_canvas, current_goal_state, self.START_END_TILE_COLOR)
         self.update_grid(self.current_canvas, self.current_displayed_state, self.CURRENT_TILE_COLOR)
 
@@ -1091,9 +1161,13 @@ class PuzzleGUI:
 
     def update_grid(self, canvas, state, tile_base_color):
         canvas.delete("all")
-        if state is None: return
+        if state is None:
+            print("State is None, skipping update")
+            return
         state_list = tuple_to_state(state)
-
+        print(f"State list: {state_list}")  # Log để kiểm tra
+        if len(state_list) != 3 or any(len(row) != 3 for row in state_list):
+            raise ValueError(f"Invalid state format: {state_list}, expected 3x3 matrix")
         for r in range(ROWS):
             for c in range(COLS):
                 val = state_list[r][c]
@@ -1103,11 +1177,11 @@ class PuzzleGUI:
                 y1 = y0 + self.tile_size
 
                 if val == 0:
-                     canvas.create_rectangle(x0, y0, x1, y1, fill=self.EMPTY_TILE_COLOR, outline=self.GRID_BORDER_COLOR, width=1)
+                    canvas.create_rectangle(x0, y0, x1, y1, fill=self.EMPTY_TILE_COLOR, outline=self.GRID_BORDER_COLOR, width=1)
                 else:
                     canvas.create_rectangle(x0, y0, x1, y1, fill=tile_base_color, outline=self.GRID_BORDER_COLOR, width=1)
                     canvas.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=str(val),
-                                       font=self.grid_font, fill=self.TEXT_COLOR_ON_TILE)
+                                    font=self.grid_font, fill=self.TEXT_COLOR_ON_TILE)
 
     def update_detail_box(self, status=None, steps=None, time_val=None, count_val=None):
         """Updates details box. Count can be nodes, beliefs, or generations/evaluations."""
@@ -1142,6 +1216,10 @@ class PuzzleGUI:
         self.speed_slider.config(state=state)
 
     def run_algorithm_thread(self, algorithm_func, algo_name):
+        if algo_name == "Backtracking":
+            self.show_backtracking_algorithm_selection(algorithm_func, algo_name)
+            return
+
         if self.animation_running:
             messagebox.showwarning("Busy", "An animation or algorithm is already running.")
             return
@@ -1151,26 +1229,114 @@ class PuzzleGUI:
         self.stop_animation_flag = False
 
         self.current_step_count.set(0)
-        self.update_detail_box(status=f"Running {algo_name}...", steps="-", time_val="-", count_val="-")
+        self.update_detail_box(status=f"Running {algo_name}... Please wait.", steps="-", time_val="-", count_val="-")
         self.update_grid(self.current_canvas, current_start_state, self.CURRENT_TILE_COLOR)
         self.master.update()
+
+        # Use default start and goal states if not using Backtracking
+        start_state = copy.deepcopy(start_state_default)
+        goal_state = copy.deepcopy(goal_state_default)
 
         def target():
             start_time = time.time()
             try:
-                # Pass current_start_state and current_goal_state.
-                # Belief search algorithms will use goal_state but ignore start_state,
-                # operating on the initial_belief_state_tuples instead.
-                result = algorithm_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                result = algorithm_func(start_state, goal_state)
                 self.master.after(0, self._handle_algorithm_result, result, algo_name, time.time() - start_time)
             except Exception as e:
-                 import traceback
-                 traceback.print_exc()
-                 self.master.after(0, self._handle_algorithm_error, algo_name, e, time.time() - start_time)
+                import traceback
+                traceback.print_exc()
+                self.master.after(0, self._handle_algorithm_error, algo_name, e, time.time() - start_time)
 
         self.animation_thread = threading.Thread(target=target, daemon=True)
         self.animation_thread.start()
 
+    def show_backtracking_algorithm_selection(self, algorithm_func, algo_name):
+        """Show a dropdown to select an algorithm for Backtracking."""
+        def start_backtracking_with_selected_algorithm():
+            selected_algo_name = algo_var.get()
+            selected_algo_func = algo_map.get(selected_algo_name)
+            if selected_algo_func:
+                selection_window.destroy()  # Close the selection window
+
+                # Start backtracking to find a valid start state
+                self.update_detail_box(status="Finding Start State using Backtracking...")
+                self.master.update()
+
+                try:
+                    valid_start_state = backtracking(current_goal_state, selected_algo_func)
+                    if valid_start_state is None:
+                        messagebox.showerror("Error", "Failed to find a valid Start State.")
+                        self.update_detail_box(status="Failed to find Start State")
+                        return
+
+                    # Update Start State on GUI
+                    global current_start_state
+                    current_start_state = valid_start_state
+                    self.update_grid(self.initial_canvas, current_start_state, self.START_END_TILE_COLOR)
+                    self.update_detail_box(status="Start State Found. Running Algorithm...")
+                    self.master.update()
+
+                    # Run the selected algorithm with the new Start State
+                    self.set_buttons_state(tk.DISABLED)
+                    self.animation_running = True
+                    self.stop_animation_flag = False
+                    self.current_step_count.set(0)
+
+                    def target():
+                        start_time = time.time()
+                        try:
+                            # For AO Search, pass the get_successors function as a partial argument
+                            if selected_algo_name == "AOSeach":
+                                result = selected_algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state), get_successors=get_successors)
+                            else:
+                                result = selected_algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                            self.master.after(0, self._handle_algorithm_result, result, f"{algo_name} ({selected_algo_name})", time.time() - start_time)
+                        except Exception as e:
+                            import traceback
+                            traceback.print_exc()
+                            self.master.after(0, self._handle_algorithm_error, f"{algo_name} ({selected_algo_name})", e, time.time() - start_time)
+
+                    self.animation_thread = threading.Thread(target=target, daemon=True)
+                    self.animation_thread.start()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"An error occurred during Backtracking:\n{str(e)}")
+                    self.update_detail_box(status="Error during Backtracking")
+
+        # Prevent multiple selection windows from opening
+        if hasattr(self, 'backtracking_selection_window') and self.backtracking_selection_window.winfo_exists():
+            self.backtracking_selection_window.lift()  # Bring the existing window to the front
+            return
+
+        algo_map = {
+            "DFS": dfs,
+            "BFS": bfs,
+            "UCS": ucs,
+            "A*": a_star,
+            "Greedy": greedy_best_first,
+            "IDS": ids,
+            "IDA*": ida_star,
+            "SimpleHC": simple_hill_climbing,
+            "SteepestHC": steepest_ascent_hill_climbing,
+            "RandomHC": random_hill_climbing,
+            "SA": simulated_annealing,
+            "Beam": partial(beam_search, beam_width=5),
+            "AOSeach": partial(and_or_search, get_successors=get_successors)
+        }
+
+        algo_var = tk.StringVar(value="DFS")
+        selection_window = tk.Toplevel(self.master)
+        self.backtracking_selection_window = selection_window  # Keep a reference to the window
+        selection_window.title("Select Algorithm for Backtracking")
+        selection_window.geometry("300x150")
+        selection_window.resizable(False, False)
+
+        tk.Label(selection_window, text="Select Algorithm:", font=self.button_font).pack(pady=10)
+        algo_dropdown = tk.OptionMenu(selection_window, algo_var, *algo_map.keys())
+        algo_dropdown.pack(pady=5)
+
+        tk.Button(selection_window, text="Start", font=self.button_font, bg="#32CD32", fg=self.BUTTON_FG_COLOR,
+                command=start_backtracking_with_selected_algorithm).pack(pady=10)
     def _handle_algorithm_result(self, result, algo_name, reported_time_taken):
         solution_data = None
         actual_time_taken = reported_time_taken
@@ -1256,7 +1422,7 @@ class PuzzleGUI:
 
     def _handle_algorithm_error(self, algo_name, error, reported_time_taken):
         self.update_detail_box(status=f"Error in {algo_name}", time_val=reported_time_taken, steps="-", count_val="-")
-        messagebox.showerror("Algorithm Error", f"An error occurred during {algo_name}:\n{error}")
+        messagebox.showerror("Algorithm Error", f"An error occurred during {algo_name}:\n{str(error)}\nPlease check the console for details.")
         self.animation_running = False
         self.set_buttons_state(tk.NORMAL)
 

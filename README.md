@@ -15,64 +15,44 @@ Bài toán 8-Puzzle là một trò chơi trượt ô cổ điển, thường đ�
 **Niềm tin ban đầu (Belief-Space):** Một *tập hợp* các cấu hình bảng mà tác nhân có thể đang ở đó.
 **Niềm tin đích (Belief-Space):** Một *tập hợp* chỉ chứa duy nhất trạng thái đích.
 
-## Các Thuật toán Tìm kiếm đã triển khai
+Dựa trên các thuật toán đã triển khai, chúng ta có thể phân chúng vào 5 nhóm:
 
-Ứng dụng này triển khai nhiều loại thuật toán tìm kiếm khác nhau:
+1.  **Uninformed State Space Search (Tìm kiếm trên Không gian Trạng không có Thông tin):**
+    *   Nhóm các thuật toán tìm kiếm trên không gian trạng thái mà **không sử dụng thông tin heuristic** (ước lượng khoảng cách đến mục tiêu) để hướng dẫn tìm kiếm.
+    *   **Thuật toán từ code:**
+        *   **DFS (Depth-First Search):** Duyệt sâu trước.
+        *   **BFS (Breadth-First Search):** Duyệt rộng trước, tìm đường đi ngắn nhất (về số bước) khi chi phí bước đều nhau.
+        *   **UCS (Uniform Cost Search):** Mở rộng nút có chi phí đường đi thực tế thấp nhất, tìm đường đi có chi phí thấp nhất.
+        *   **DLS (Limited Depth Search):** Duyệt sâu có giới hạn độ sâu.
+        *   **IDS (Iterative Deepening Depth-First Search):** Lặp lại DLS với độ sâu tăng dần.
+        *   **Sensorless Search (BFS on Belief Space):** Tìm kiếm rộng trước trên không gian các tập hợp trạng thái có thể.
+        *   **DFS on Belief Space:** Tìm kiếm sâu trước trên không gian các tập hợp trạng thái có thể.
+2.  **Informed State Space Search (Tìm kiếm trên Không gian Trạng thái có Thông tin):**
+    *   Nhóm các thuật thuật tìm kiếm trên không gian trạng thái mà **sử dụng thông tin heuristic** (ước lượng khoảng cách đến mục tiêu) để hướng dẫn tìm kiếm.
+    *   **Thuật toán từ code:**
+        *   **A\* (A\* Search):** Mở rộng nút dựa trên tổng chi phí thực tế đến nút đó cộng với chi phí ước lượng đến mục tiêu (g + h). Tìm đường đi tối ưu.
+        *   **Greedy Best-First Search:** Mở rộng nút dựa hoàn toàn vào chi phí ước lượng đến mục tiêu (h). Không đảm bảo tối ưu.
+        *   **IDA\* (Iterative Deepening A\* Search):** Lặp lại tìm kiếm giới hạn theo f-cost (g + h) tăng dần. Tìm đường đi tối ưu.
 
-### I. Thuật toán Tìm kiếm trên Không gian Trạng thái (State-Space Search)
+3.  **Local Search (Tìm kiếm Cục bộ):**
+    *   Nhóm các thuật toán tìm kiếm lời giải bằng cách cải thiện ứng viên giải pháp hiện tại dựa trên các "lân cận" trong không gian tìm kiếm, không xây dựng cây tìm kiếm đầy đủ.
+    *   **Thuật toán từ code:**
+        *   **Simple Hill Climbing:** Từ điểm ngẫu nhiên, di chuyển đến lân cận tốt hơn đầu tiên.
+        *   **Steepest Ascent Hill Climbing:** Từ điểm ngẫu nhiên, di chuyển đến lân cận tốt hơn có giá trị tốt nhất.
+        *   **Random Hill Climbing:** Từ điểm ngẫu nhiên, di chuyển đến một lân cận tốt hơn được chọn ngẫu nhiên.
+        *   **Simulated Annealing (SA):** Sử dụng nhiệt độ giảm dần để cho phép chấp nhận các nước đi xấu hơn với xác suất, giúp thoát khỏi cực trị cục bộ.
+        *   **Beam Search:** Biến thể của Best-First Search, chỉ giữ lại một số lượng cố định (beam width) các trạng thái tốt nhất (theo heuristic) ở mỗi cấp độ. Không đảm bảo tối ưu hoặc hoàn chỉnh.
+        *   **Genetic Algorithm (GA):** Tìm kiếm lời giải (chuỗi hành động) bằng cách thao tác trên một quần thể các chuỗi hành động thông qua các thế hệ.
+        
+4.  **CSPS (Constraint Satisfaction Problem Solving):**
+    *   Nhóm các thuật toán giải các bài toán tìm kiếm cấu hình thỏa mãn một tập hợp các ràng buộc. Trong code này, CSPS được dùng để giải bài toán phụ: tìm một cấu hình ma trận 3x3 chứa các số từ 0 đến 8 duy nhất một lần (tức là một trạng thái 8-Puzzle hợp lệ).
+    *   **Thuật toán từ code:**
+        *   **Backtracking:** Phương pháp có hệ thống để xây dựng từng phần của giải pháp và quay lui khi vi phạm ràng buộc. (Hàm `backtracking` trong code sử dụng Backtracking Search để *tìm một trạng thái bắt đầu* hợp lệ).
 
-Các thuật toán này giả định rằng tác nhân luôn biết chính xác mình đang ở trạng thái nào (observable).
+5.  **Complex Environment (Tìm kiếm trong môi trường phức tạp):**
+    *   Một loại tìm kiếm trong môi trường phức tạp, không xác, nhiều tác nhân, trạng thái.
+    *   **Thuật toán từ code:**
+        *   AND-OR Search (AOSearch): Tìm kiếm bằng cách xây dựng cây kế hoạch gồm các node AND và OR nhằm xử lý mọi khả năng có thể xảy ra.
 
-1.  **BFS (Breadth-First Search):** Hoàn chỉnh, tối ưu (với chi phí bước đồng nhất). Khám phá theo chiều rộng.
-2.  **DFS (Depth-First Search):** Hoàn chỉnh (với visited set và không gian hữu hạn), không tối ưu. Khám phá theo chiều sâu.
-3.  **UCS (Uniform Cost Search):** Hoàn chỉnh, tối ưu. Mở rộng nút có chi phí thấp nhất.
-4.  **Greedy Best-First Search:** Không hoàn chỉnh, không tối ưu. Mở rộng nút có heuristic tốt nhất (Manhattan).
-5.  **A\* Search:** Hoàn chỉnh, tối ưu (với heuristic admissible và consistent). Mở rộng nút có f-cost (g+h) thấp nhất.
-6.  **IDS (Iterative Deepening Search):** Hoàn chỉnh, tối ưu. Kết hợp ưu điểm bộ nhớ của DFS và tính hoàn chỉnh/tối ưu của BFS.
-7.  **IDA\* (Iterative Deepening A\*):** Hoàn chỉnh, tối ưu. Kết hợp ưu điểm bộ nhớ của DFS và tính tối ưu của A\*. Thường hiệu quả cho 8-Puzzle.
 
-### II. Thuật toán Tìm kiếm Cục bộ (Local Search)
 
-Các thuật toán này không đảm bảo tìm được lời giải tối ưu hoặc tìm được lời giải nào cả, dễ bị kẹt ở điểm cực tiểu cục bộ.
-
-1.  **Simple Hill Climbing:** Di chuyển đến trạng thái lân cận *đầu tiên* tốt hơn.
-2.  **Steepest Ascent Hill Climbing:** Di chuyển đến trạng thái lân cận *tốt nhất* tốt hơn.
-3.  **Random Hill Climbing:** Di chuyển đến trạng thái lân cận tốt hơn được *chọn ngẫu nhiên*.
-4.  **Simulated Annealing (SA):** Có khả năng thoát local optima bằng cách chấp nhận ngẫu nhiên các bước đi tồi hơn với xác suất giảm dần.
-5.  **Beam Search:** Giữ lại K trạng thái tốt nhất ở mỗi cấp độ. Không hoàn chỉnh, không tối ưu.
-
-### III. Thuật toán Tìm kiếm trên Không gian Niềm tin (Belief-Space Search / Sensorless Search)
-
-Các thuật toán này tìm kiếm một kế hoạch chung (chuỗi hành động cố định) hoạt động cho *tất cả* các trạng thái trong tập niềm tin ban đầu để đi đến niềm tin đích.
-
-1.  **Sensorless Search (BFS on Belief Space):** Tìm kế hoạch ngắn nhất trong không gian niềm tin bằng BFS.
-2.  **DFS\_Belief (DFS on Belief Space):** Tìm kế hoạch bằng DFS trong không gian niềm tin.
-
-### IV. Thuật toán Khác
-
-1.  **Backtracking Search (CSP Style):** Một hình thức tìm kiếm theo chiều sâu với quay lui để tìm đường đi trong không gian trạng thái.
-2.  **Genetic Algorithm (GA):** Thuật toán tối ưu hóa dựa trên tiến hóa để tìm chuỗi hành động. (Lưu ý: Triển khai hiện tại tìm kế hoạch từ một trạng thái bắt đầu cụ thể, không phải tập niềm tin).
-
-## Cách sử dụng
-
-1.  Chạy file script Python.
-2.  Giao diện chính hiển thị "Start", "End" và "Current" puzzle grids.
-3.  Sử dụng các nút trong phần "Algorithms" để chạy các thuật toán tìm kiếm khác nhau.
-4.  Sử dụng thanh trượt "Speed" để điều chỉnh tốc độ animation. Nút "Stop" để dừng animation.
-5.  Sử dụng các nút trong phần "Setup":
-    *   **Set Start:** Mở cửa sổ để nhập trạng thái bắt đầu tùy chỉnh.
-    *   **Set Goal:** Mở cửa sổ để nhập trạng thái đích tùy chỉnh.
-    *   **Set Belief:** Mở cửa sổ để quản lý (thêm, xóa, chỉnh sửa, đặt lại mặc định) tập hợp các trạng thái trong "Initial Belief Set" cho các thuật toán Sensorless/Belief Space.
-
-## Cài đặt
-
-Ứng dụng chỉ yêu cầu các module Python tích hợp sẵn (`tkinter`, `heapq`, `collections`, `random`, `threading`, `copy`, `functools`, `math`, `sys`).
-
-Không cần cài đặt thêm thư viện bên ngoài.
-
-## Yêu cầu hệ thống
-
-*   Python 3.x
-*   Hệ điều hành hỗ trợ Tkinter (Windows, macOS, Linux)
-
----
