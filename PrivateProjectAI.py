@@ -14,6 +14,7 @@ import sys
 # --- Core Logic ---
 ROWS, COLS = 3, 3
 start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
+#start_state_default = [[1, 2, 3], [5, 4, 6], [0, 7, 8]]
 goal_state_default = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 current_start_state = copy.deepcopy(start_state_default)
 current_goal_state = copy.deepcopy(goal_state_default)
@@ -40,10 +41,6 @@ def get_neighbors(state):
             neighbors.append((new_state, 1))
     return neighbors
 
-def state_to_tuple(state):
-    """Converts a state to a tuple for hashing."""
-    return tuple(tuple(row) for row in state)
-
 def heuristic(state, goal):
     """Calculates the Manhattan distance heuristic."""
     distance = 0
@@ -61,6 +58,20 @@ def heuristic(state, goal):
                 distance += abs(r - goal_r) + abs(c - goal_c)
     return distance
 
+ACTION_LIST = ['RIGHT', 'LEFT', 'DOWN', 'UP']
+
+def state_to_tuple(state):
+    """Chuyển ma trận 3x3 thành tuple."""
+    return tuple(val for row in state for val in row)
+
+def find_zero(state):
+    """Tìm vị trí (row, col) của ô trống (0)."""
+    for r in range(3):
+        for c in range(3):
+            if state[r][c] == 0:
+                return r, c
+    return None
+
 def tuple_to_state(state):
     if isinstance(state, (list, tuple)) and len(state) == 3 and all(isinstance(row, (list, tuple)) and len(row) == 3 for row in state):
         return [list(row) for row in state]
@@ -69,7 +80,7 @@ def tuple_to_state(state):
     raise ValueError(f"Invalid state format: {state}, expected a 3x3 matrix or a tuple of 9 elements")
 
 def is_solvable(state, goal_state):
-    """Checks if the state is solvable relative to the goal state."""
+    """Kiểm tra xem trạng thái có thể giải được so với trạng thái mục tiêu."""
     flat_state = [val for row in state for val in row if val != 0]
     goal_flat_state = [val for row in goal_state for val in row if val != 0]
     inversions = sum(1 for i in range(len(flat_state)) for j in range(i + 1, len(flat_state)) if flat_state[i] > flat_state[j])
@@ -78,37 +89,18 @@ def is_solvable(state, goal_state):
     goal_blank_row = find_zero(goal_state)[0]
     return (inversions % 2 == goal_inversions % 2) and ((blank_row % 2) == (goal_blank_row % 2))
 
-
-ACTION_MAP = {
-    'UP': (-1, 0),
-    'DOWN': (1, 0),
-    'LEFT': (0, -1),
-    'RIGHT': (0, 1)
-}
-ACTION_LIST = ['RIGHT', 'LEFT','DOWN','UP']
-
-initial_belief_state_tuples = {
-    state_to_tuple([[1, 2, 3], [4, 5, 6], [7, 0, 8]]),
-    state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 8, 6]]),
-    state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 6, 8]])
-}
-
 def generate_initial_belief_set(start_state):
-    """Returns the predefined initial belief set from initial_belief_state_tuples."""
+    initial_belief_state_tuples = {
+        state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 7, 8]]),
+        state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 8, 7]]),
+        #state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 6, 8]])
+    }
     belief_set = [tuple_to_state(state_tuple) for state_tuple in initial_belief_state_tuples]
     return belief_set
 
 def apply_action(state, action):
     state_matrix = tuple_to_state(state)
-    blank_pos = None
-    for r in range(3):
-        for c in range(3):
-            if state_matrix[r][c] == 0:
-                blank_pos = (r, c)
-                break
-        if blank_pos:
-            break
-
+    blank_pos = find_zero(state_matrix)
     if blank_pos is None:
         return None
 
@@ -132,67 +124,14 @@ def apply_action(state, action):
         return state_matrix
     return None
 
-def dfs_belief_search(start_state, goal_state):
-    print("Running DFS on Belief Space (Sensorless)...")
-    initial_belief_set = generate_initial_belief_set(start_state)
-    print("Initial belief states:")
-    for state in initial_belief_set:
-        print(state)
-    print()
-
-    goal_matrix = tuple_to_state(goal_state)
-    goal_tuple = tuple(state_to_tuple(goal_matrix))
-    visited = set()
-    stack = [(initial_belief_set, [])]  # (belief_set, actions)
-    belief_state_count = 0
-
-    while stack:
-        current_belief_set, actions = stack.pop()
-        belief_state_count += 1
-
-        belief_set_tuple = tuple(sorted([tuple(state_to_tuple(state)) for state in current_belief_set]))
-        if belief_set_tuple in visited:
-            continue
-        visited.add(belief_set_tuple)
-
-        print(f"DFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, actions so far={actions}")
-        print("Current belief states:")
-        for state in current_belief_set:
-            print(state)
-
-        all_goal = all(tuple(state_to_tuple(state)) == goal_tuple for state in current_belief_set)
-        if all_goal:
-            print(f"Sensorless (DFS): Found a plan with actions: {actions}")
-            return actions, time.time(), belief_state_count
-
-        for action in ['RIGHT', 'LEFT', 'DOWN', 'UP']:
-            print(f"Trying action: {action}")
-            new_belief_set = set()
-            action_failed = False
-
-            for state in current_belief_set:
-                print(f"Applying {action} to {state}")
-                new_state = apply_action(state, action)
-                if new_state is None:
-                    print(f"Action {action} failed for state {state}")
-                    action_failed = True
-                    break
-                print(f"Result: {new_state}")
-                new_belief_set.add(tuple(state_to_tuple(new_state)))
-
-            if not action_failed:
-                new_belief_set = [tuple_to_state(state) for state in new_belief_set]
-                print(f"New belief states after {action}: {new_belief_set}")
-                stack.append((new_belief_set, actions + [action]))
-            print()
-
-    print("Sensorless (DFS): Failed to find a plan.")
-    return None, time.time(), belief_state_count
-
 def bfs_belief_search(start_state, goal_state):
     print("Running Sensorless Search (BFS on Belief Space)...")
-    initial_belief_set = generate_initial_belief_set(start_state)
-    print("Initial belief states:")
+    
+    # Sử dụng trạng thái mặc định cho belief set
+    belief_start_state = [[1, 2, 3], [4, 0, 5], [6, 7, 8]]
+    initial_belief_set = generate_initial_belief_set(state_to_tuple(belief_start_state))
+    
+    print("Initial belief set:")
     for state in initial_belief_set:
         print(state)
     print()
@@ -202,6 +141,7 @@ def bfs_belief_search(start_state, goal_state):
     visited = set()
     queue = deque([(initial_belief_set, [])])  # (belief_set, actions)
     belief_state_count = 0
+    start_time = time.time()  # Bắt đầu đo thời gian
 
     while queue:
         current_belief_set, actions = queue.popleft()
@@ -212,17 +152,25 @@ def bfs_belief_search(start_state, goal_state):
             continue
         visited.add(belief_set_tuple)
 
-        print(f"BFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, actions so far={actions}")
-        print("Current belief states:")
+        print(f"BFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, current actions={actions}")
+        print("Current belief set:")
         for state in current_belief_set:
             print(state)
 
         all_goal = all(tuple(state_to_tuple(state)) == goal_tuple for state in current_belief_set)
         if all_goal:
-            print(f"Sensorless (BFS): Found a plan with actions: {actions}")
-            return actions, time.time(), belief_state_count
+            print(f"Sensorless Search (BFS): Found a plan with actions: {actions}")
+            
+            # Cập nhật current_start_state thành trạng thái mặc định của belief_start_state
+            global current_start_state
+            current_start_state = copy.deepcopy(belief_start_state)
+            
+            # Cập nhật lưới Start trên GUI
+            gui.update_grid(gui.initial_canvas, current_start_state, gui.START_END_TILE_COLOR)
+            
+            return actions, time.time() - start_time, belief_state_count  # Tính thời gian thực tế
 
-        for action in ['RIGHT', 'LEFT', 'DOWN', 'UP']:
+        for action in ACTION_LIST:
             print(f"Trying action: {action}")
             new_belief_set = set()
             action_failed = False
@@ -239,12 +187,119 @@ def bfs_belief_search(start_state, goal_state):
 
             if not action_failed:
                 new_belief_set = [tuple_to_state(state) for state in new_belief_set]
-                print(f"New belief states after {action}: {new_belief_set}")
+                print(f"New belief set after {action}: {new_belief_set}")
                 queue.append((new_belief_set, actions + [action]))
             print()
 
-    print("Sensorless (BFS): Failed to find a plan.")
-    return None, time.time(), belief_state_count
+    print("Sensorless Search (BFS): Failed to find a plan.")
+    return None, time.time() - start_time, belief_state_count  # Tính thời gian thực tế
+
+def get_observation(state):
+    """
+    Trả về quan sát từ trạng thái, giả sử quan sát là vị trí của ô trống.
+    :param state: Trạng thái hiện tại (ma trận 3x3)
+    :return: Vị trí (row, col) của ô trống
+    """
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                return (i, j)
+    return None
+
+def filter_belief_set(belief_set, observation):
+    """
+    Lọc tập niềm tin dựa trên quan sát.
+    :param belief_set: Tập niềm tin hiện tại
+    :param observation: Quan sát nhận được (vị trí ô trống)
+    :return: Tập niềm tin đã được lọc
+    """
+    filtered_belief_set = []
+    for state in belief_set:
+        if get_observation(state) == observation:
+            filtered_belief_set.append(state)
+    return filtered_belief_set
+
+def bfs_partially_observable_search(start_state, goal_state):
+    """
+    Chạy BFS trên không gian niềm tin với quan sát (Partially Observable).
+    :param start_state: Trạng thái bắt đầu (không sử dụng để tạo belief set)
+    :param goal_state: Trạng thái mục tiêu
+    :return: Kế hoạch hành động, thời gian và số trạng thái khám phá
+    """
+    print("Running Partially Observable Search (BFS on Belief Space)...")
+
+    # Sử dụng trạng thái mặc định cho belief set
+    belief_start_state = [[1, 2, 3], [4, 0, 5], [6, 7, 8]]
+    initial_belief_set = generate_initial_belief_set(state_to_tuple(belief_start_state))
+    
+    print("Initial belief set:")
+    for state in initial_belief_set:
+        print(state)
+    print()
+
+    goal_matrix = tuple_to_state(goal_state)
+    goal_tuple = tuple(state_to_tuple(goal_matrix))
+    visited = set()
+    queue = deque([(initial_belief_set, [], None)])  # (belief_set, actions, last_observation)
+    belief_state_count = 0
+    start_time = time.time()
+
+    while queue:
+        current_belief_set, actions, last_observation = queue.popleft()
+        belief_state_count += 1
+
+        # Chuyển tập niềm tin thành tuple để kiểm tra visited
+        belief_set_tuple = tuple(sorted([tuple(state_to_tuple(state)) for state in current_belief_set]))
+        if belief_set_tuple in visited:
+            continue
+        visited.add(belief_set_tuple)
+
+        print(f"BFS Belief: Exploring belief state {belief_state_count}, size={len(current_belief_set)}, current actions={actions}, last observation={last_observation}")
+        print("Current belief set:")
+        for state in current_belief_set:
+            print(state)
+
+        # Kiểm tra xem tất cả trạng thái trong tập niềm tin có đạt mục tiêu không
+        all_goal = all(tuple(state_to_tuple(state)) == goal_tuple for state in current_belief_set)
+        if all_goal:
+            print(f"Partially Observable Search (BFS): Found a plan with actions: {actions}")
+            
+            # Cập nhật current_start_state thành trạng thái mặc định
+            global current_start_state
+            current_start_state = copy.deepcopy(belief_start_state)
+            
+            # Cập nhật GUI (giả định GUI tồn tại)
+            gui.update_grid(gui.initial_canvas, current_start_state, gui.START_END_TILE_COLOR)
+            
+            return actions, time.time() - start_time, belief_state_count
+
+        for action in ACTION_LIST:
+            print(f"Trying action: {action}")
+            new_belief_set = set()
+
+            # Áp dụng hành động cho từng trạng thái trong tập niềm tin
+            for state in current_belief_set:
+                new_state = apply_action(state, action)
+                if new_state is not None:
+                    new_belief_set.add(tuple(state_to_tuple(new_state)))
+
+            if not new_belief_set:
+                continue
+
+            new_belief_set = [tuple_to_state(state) for state in new_belief_set]
+            print(f"New belief set after {action}: {new_belief_set}")
+
+            
+            possible_observations = set(get_observation(state) for state in new_belief_set)
+            for observation in possible_observations:
+                
+                filtered_belief_set = filter_belief_set(new_belief_set, observation)
+                if filtered_belief_set:  # Chỉ thêm nếu tập niềm tin không rỗng
+                    print(f"Observation {observation} -> Filtered belief set: {filtered_belief_set}")
+                    queue.append((filtered_belief_set, actions + [action], observation))
+
+    print("Partially Observable Search (BFS): Failed to find a plan.")
+    return None, time.time() - start_time, belief_state_count
 
 def dfs(start, goal):
     """Depth-First Search (State Space)."""
@@ -926,14 +981,7 @@ def genetic_algorithm(start_state, goal_state, population_size=200, max_generati
 # --- Backtracking Logic ---
 
 def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
-    """
-    Hàm Backtracking để tạo ra một ma trận hợp lệ và kiểm tra xem thuật toán có thể giải được không.
-    :param algorithm: Tên thuật toán như "Greedy", "BFS", "A*", v.v.
-    :param goal_state: Trạng thái đích.
-    :param verbose: Bật/tắt log chi tiết.
-    :param max_attempts: Giới hạn số lần thử trạng thái.
-    :return: Trạng thái bắt đầu hợp lệ phù hợp với thuật toán, None nếu không tìm được.
-    """
+
     ROWS, COLS = 3, 3
 
     def is_valid_state(state):
@@ -944,7 +992,7 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
     def is_compatible_with_algorithm(state, algorithm):
         """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
         local_search_algorithms = ["SimpleHC", "SteepestHC", "StochasticHC", "SA", "GA", "Beam"]
-        belief_space_algorithms = ["BFS_Belief", "DFS_Belief"]
+        belief_space_algorithms = ["BFS_Belief"]
         if algorithm in local_search_algorithms or algorithm == "AOSeach":
             return is_solvable(state, goal_state) and state != goal_state
         if algorithm in belief_space_algorithms:
@@ -979,8 +1027,6 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
                     "SA": simulated_annealing,
                     "Beam": partial(beam_search, beam_width=5),
                     "AOSeach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
-                    "BFS_Belief": bfs_belief_search,
-                    "DFS_Belief": dfs_belief_search,
                     "GA": genetic_algorithm,
                     "SenSorless": bfs_belief_search
                 }
@@ -1028,6 +1074,117 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
         print(f"Backtracking failed: Could not find a valid start state for algorithm {algorithm}.")
     return result
 
+#--- AC3 Algorithm ---
+def ac3(algorithm, goal_state, verbose=True, max_attempts=1000):
+
+    ROWS, COLS = 3, 3
+
+    def is_valid_state(state):
+        """Kiểm tra xem trạng thái có hợp lệ không (chứa đủ các số từ 0 đến 8 đúng một lần)."""
+        values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
+        return values == set(range(ROWS * COLS))
+
+    def is_compatible_with_algorithm(state, algorithm):
+        """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
+        local_search_algorithms = ["SimpleHC", "SteepestHC", "StochasticHC", "SA", "GA", "Beam"]
+        belief_space_algorithms = ["Sensorless", "POsearch"]
+        if algorithm in local_search_algorithms or algorithm == "AOSerach":
+            return is_solvable(state, goal_state) and state != goal_state
+        if algorithm in belief_space_algorithms:
+            belief_set = generate_initial_belief_set(state_to_tuple(state))
+            return state in belief_set or is_solvable(state, goal_state)
+        return is_solvable(state, goal_state)
+
+    def revise(domains, var1, var2):
+        """Kiểm tra và loại bỏ các giá trị không nhất quán từ miền của var1 dựa trên ràng buộc với var2."""
+        revised = False
+        new_domain = domains[var1].copy()
+        for x in domains[var1]:
+            # Ràng buộc: var1 và var2 phải có giá trị khác nhau
+            if all(x == y for y in domains[var2]):
+                new_domain.remove(x)
+                revised = True
+        domains[var1] = new_domain
+        return revised
+
+    # Khởi tạo miền giá trị: mỗi ô có thể nhận giá trị từ 0 đến 8
+    domains = {i: list(range(9)) for i in range(9)}  # 9 ô, đánh số từ 0 đến 8
+    arcs = deque([(i, j) for i in range(9) for j in range(9) if i != j])  # Tất cả các cặp ô khác nhau
+
+    # Chạy AC3 để đảm bảo tính nhất quán cung
+    while arcs:
+        var1, var2 = arcs.popleft()
+        if revise(domains, var1, var2):
+            if not domains[var1]:
+                if verbose:
+                    print("AC3: Miền rỗng, không tìm được trạng thái hợp lệ.")
+                return None
+            # Thêm các cung liên quan đến var1 vào lại hàng đợi
+            for var3 in range(9):
+                if var3 != var1 and var3 != var2:
+                    arcs.append((var3, var1))
+
+    # Sau khi AC3 hoàn tất, chọn giá trị từ các miền để tạo trạng thái
+    attempts = 0
+    while attempts < max_attempts:
+        attempts += 1
+        state = [[0] * COLS for _ in range(ROWS)]
+        used_values = set()
+        valid = True
+
+        # Gán giá trị ngẫu nhiên từ miền còn lại
+        for i in range(9):
+            row, col = divmod(i, 3)
+            available_values = [v for v in domains[i] if v not in used_values]
+            if not available_values:
+                valid = False
+                break
+            value = random.choice(available_values)
+            state[row][col] = value
+            used_values.add(value)
+
+        if valid and is_valid_state(state):
+            if verbose:
+                print(f"Checking state at attempt {attempts}:")
+                for row in state:
+                    print(row)
+            if is_compatible_with_algorithm(state, algorithm):
+                # Kiểm tra bằng cách chạy thuật toán
+                algo_map = {
+                    "DFS": dfs,
+                    "BFS": bfs,
+                    "UCS": ucs,
+                    "A*": a_star,
+                    "Greedy": greedy_best_first,
+                    "IDS": ids,
+                    "IDA*": ida_star,
+                    "SimpleHC": simple_hill_climbing,
+                    "SteepestHC": steepest_ascent_hill_climbing,
+                    "StochasticHC": stochastic_hill_climbing,
+                    "SA": simulated_annealing,
+                    "Beam": partial(beam_search, beam_width=5),
+                    "AOSerach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
+                    "GA": genetic_algorithm,
+                    "Sensorless": bfs_belief_search,
+                    "POsearch": bfs_partially_observable_search
+                }
+                if algorithm in algo_map:
+                    path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
+                    if path and path[-1] == goal_state:
+                        if verbose:
+                            print("Found a valid state compatible with the algorithm:")
+                            for row in state:
+                                print(row)
+                        return state
+                else:
+                    if verbose:
+                        print(f"Algorithm {algorithm} not supported for validation.")
+            if verbose:
+                print("State not compatible or algorithm failed, trying another state...\n")
+
+    if verbose:
+        print(f"AC3 failed: Could not find a valid start state after {max_attempts} attempts.")
+    return None
 
 # --- GUI Class ---
 class PuzzleGUI:
@@ -1087,8 +1244,8 @@ class PuzzleGUI:
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
                         "SimpleHC", "SteepestHC", "StochasticHC", "SA", "Beam", "AOSerach",
-                        "BFS_Belief", "DFS_Belief",
-                        "GA", "Backtracking"]
+                        "Sensorless", "POsearch",  
+                        "GA", "Backtracking", "AC3"]
         beam_width_default = 5
 
         algo_map = {
@@ -1105,10 +1262,11 @@ class PuzzleGUI:
             "SA": simulated_annealing,
             "Beam": partial(beam_search, beam_width=beam_width_default),
             "AOSerach": partial(and_or_search, get_successors=get_successors),
-            "BFS_Belief": bfs_belief_search,
-            "DFS_Belief": dfs_belief_search,
+            "Sensorless": bfs_belief_search,
+            "POsearch": bfs_partially_observable_search,
             "GA": genetic_algorithm,
-            "Backtracking": backtracking
+            "Backtracking": backtracking,
+            "AC3": ac3
         }
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
@@ -1226,28 +1384,29 @@ class PuzzleGUI:
     def update_detail_box(self, status=None, steps=None, time_val=None, count_val=None):
         """Updates details box. Count can be nodes, beliefs, or generations/evaluations."""
         if status is not None:
-             self.algorithm_status_text.set(f"Status: {status}")
+            self.algorithm_status_text.set(f"Status: {status}")
         if steps is not None:
             self.steps_display_label.config(text=f"Path Steps: {steps}" if steps != -1 else "Path Steps: -")
         if time_val is not None:
-             self.time_display_label.config(text=f"Time: {time_val:.3f}s" if isinstance(time_val, (int, float)) else f"Time: {time_val}")
+            self.time_display_label.config(text=f"Time: {time_val:.3f}s" if isinstance(time_val, (int, float)) else f"Time: {time_val}")
         if count_val is not None:
-             # Determine label based on current status or algorithm type
-             current_status_text = self.algorithm_status_text.get()
-             label = "Count" # Default label
-             if "Running Sensorless" in current_status_text or "Plan Found" in current_status_text or "Belief" in current_status_text:
-                  label = "Beliefs"
-             elif "Running Genetic Algorithm" in current_status_text or "(max iterations/generations)." in current_status_text:
-                  label = "Evaluations" # Or Generations
-             else:
-                  label = "Nodes"
+            # Determine label based on current status or algorithm type
+            current_status_text = self.algorithm_status_text.get()
+            belief_algorithms = ["Running Sensorless", "Running Partially Observable", "Plan Found", "Belief"]
+            is_belief_algorithm = any(keyword in current_status_text for keyword in belief_algorithms)
 
-             if isinstance(count_val, (int, float)):
-                 count_str = f"{int(count_val)}" if count_val == int(count_val) else f"{count_val:.2f}"
-                 self.nodes_display_label.config(text=f"{label}: {count_str}")
-             else:
-                  self.nodes_display_label.config(text=f"{label}: {count_val}")
+            if is_belief_algorithm:
+                label = "Beliefs"
+            elif "Running Genetic Algorithm" in current_status_text or "(max iterations/generations)." in current_status_text:
+                label = "Evaluations"  # Or Generations
+            else:
+                label = "Nodes"
 
+            if isinstance(count_val, (int, float)):
+                count_str = f"{int(count_val)}" if count_val == int(count_val) else f"{count_val:.2f}"
+                self.nodes_display_label.config(text=f"{label}: {count_str}")
+            else:
+                self.nodes_display_label.config(text=f"{label}: {count_val}")
 
     def set_buttons_state(self, state):
         for button in self.buttons:
@@ -1375,6 +1534,154 @@ class PuzzleGUI:
 
         tk.Button(selection_window, text="Start", font=self.button_font, bg="#32CD32", fg=self.BUTTON_FG_COLOR,
                 command=start_backtracking_with_selected_algorithm).pack(pady=10)
+        
+    def add_ac3_button(self):
+        # Tìm frame chứa các nút thuật toán
+        algo_frame = self.top_control_frame.winfo_children()[0]
+        button_container = algo_frame.winfo_children()[1]
+        
+        # Tạo frame mới nếu cần
+        max_buttons_per_row = 8
+        current_row_frame = button_container.winfo_children()[-1]
+        if len(current_row_frame.winfo_children()) >= max_buttons_per_row:
+            current_row_frame = tk.Frame(button_container, bg=self.BG_COLOR)
+            current_row_frame.pack(fill=tk.X, pady=1)
+
+        # Thêm nút AC3
+        color = self.BUTTON_COLORS[len(self.buttons) % len(self.BUTTON_COLORS)]
+        cmd = partial(self.run_algorithm_thread, ac3, "AC3")
+        button = tk.Button(current_row_frame, text="AC3", font=self.button_font,
+                           bg=color, fg=self.BUTTON_FG_COLOR, width=12, height=1,
+                           command=cmd, relief=tk.RAISED, borderwidth=2)
+        button.pack(side=tk.LEFT, padx=2, pady=1)
+        self.buttons.append(button)
+
+    def show_ac3_algorithm_selection(self, algorithm_func, algo_name):
+        """Hiển thị dropdown để chọn thuật toán mục tiêu cho AC3."""
+        def start_ac3_with_selected_algorithm():
+            selected_algo_name = algo_var.get()
+            if selected_algo_name:
+                selection_window.destroy()
+
+                # Chạy AC3 để tìm trạng thái ban đầu
+                self.update_detail_box(status="Finding Start State using AC3...")
+                self.master.update()
+
+                try:
+                    valid_start_state = ac3(selected_algo_name, current_goal_state)
+                    if valid_start_state is None:
+                        messagebox.showerror("Error", "Failed to find a valid Start State.")
+                        self.update_detail_box(status="Failed to find Start State")
+                        return
+
+                    # Cập nhật Start State trên GUI
+                    global current_start_state
+                    current_start_state = valid_start_state
+                    self.update_grid(self.initial_canvas, current_start_state, self.START_END_TILE_COLOR)
+                    self.update_detail_box(status="Start State Found. Running Algorithm...")
+                    self.master.update()
+
+                    # Chạy thuật toán được chọn với trạng thái ban đầu mới
+                    self.set_buttons_state(tk.DISABLED)
+                    self.animation_running = True
+                    self.stop_animation_flag = False
+                    self.current_step_count.set(0)
+
+                    def target():
+                        start_time = time.time()
+                        try:
+                            algo_func = algo_map[selected_algo_name]
+                            result = algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                            self.master.after(0, self._handle_algorithm_result, result, f"{algo_name} ({selected_algo_name})", time.time() - start_time)
+                        except Exception as e:
+                            import traceback
+                            traceback.print_exc()
+                            self.master.after(0, self._handle_algorithm_error, f"{algo_name} ({selected_algo_name})", e, time.time() - start_time)
+
+                    self.animation_thread = threading.Thread(target=target, daemon=True)
+                    self.animation_thread.start()
+
+                except Exception as e:
+                    messagebox.showerror("Error", f"An error occurred during AC3:\n{str(e)}")
+                    self.update_detail_box(status="Error during AC3")
+
+        # Ngăn mở nhiều cửa sổ chọn thuật toán
+        if hasattr(self, 'ac3_selection_window') and self.ac3_selection_window.winfo_exists():
+            self.ac3_selection_window.lift()
+            return
+
+        algo_map = {
+            "DFS": dfs,
+            "BFS": bfs,
+            "UCS": ucs,
+            "A*": a_star,
+            "Greedy": greedy_best_first,
+            "IDS": ids,
+            "IDA*": ida_star,
+            "SimpleHC": simple_hill_climbing,
+            "SteepestHC": steepest_ascent_hill_climbing,
+            "StochasticHC": stochastic_hill_climbing,
+            "SA": simulated_annealing,
+            "Beam": partial(beam_search, beam_width=5),
+            "AOSerach": partial(and_or_search, get_successors=get_successors),
+            "Sensorless": bfs_belief_search,
+            "POsearch": bfs_partially_observable_search,
+            "GA": genetic_algorithm
+        }
+
+        algo_var = tk.StringVar(value="DFS")
+        selection_window = tk.Toplevel(self.master)
+        self.ac3_selection_window = selection_window
+        selection_window.title("Select Algorithm for AC3")
+        selection_window.geometry("300x150")
+        selection_window.resizable(False, False)
+
+        tk.Label(selection_window, text="Select Algorithm:", font=self.button_font).pack(pady=10)
+        algo_dropdown = tk.OptionMenu(selection_window, algo_var, *algo_map.keys())
+        algo_dropdown.pack(pady=5)
+
+        tk.Button(selection_window, text="Start", font=self.button_font, bg="#32CD32", fg=self.BUTTON_FG_COLOR,
+                  command=start_ac3_with_selected_algorithm).pack(pady=10)
+
+    def run_algorithm_thread(self, algorithm_func, algo_name):
+        if algo_name == "Backtracking":
+            self.show_backtracking_algorithm_selection(algorithm_func, algo_name)
+            return
+        
+        elif algo_name == "AC3":
+            self.show_ac3_algorithm_selection(algorithm_func, algo_name)
+            return
+
+        if self.animation_running:
+            messagebox.showwarning("Busy", "An animation or algorithm is already running.")
+            return
+
+        self.set_buttons_state(tk.DISABLED)
+        self.animation_running = True
+        self.stop_animation_flag = False
+
+        self.current_step_count.set(0)
+        self.update_detail_box(status=f"Running {algo_name}... Please wait.", steps="-", time_val="-", count_val="-")
+        self.update_grid(self.current_canvas, current_start_state, self.CURRENT_TILE_COLOR)
+        self.master.update()
+
+        # Use default start and goal states if not using Backtracking
+        start_state = copy.deepcopy(start_state_default)
+        goal_state = copy.deepcopy(goal_state_default)
+
+        def target():
+            start_time = time.time()
+            try:
+                result = algorithm_func(start_state, goal_state)
+                self.master.after(0, self._handle_algorithm_result, result, algo_name, time.time() - start_time)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.master.after(0, self._handle_algorithm_error, algo_name, e, time.time() - start_time)
+
+        self.animation_thread = threading.Thread(target=target, daemon=True)
+        self.animation_thread.start()
+
     def _handle_algorithm_result(self, result, algo_name, reported_time_taken):
         solution_data = None
         actual_time_taken = reported_time_taken
@@ -1428,7 +1735,7 @@ class PuzzleGUI:
                      is_goal_reached_sim = sim_valid and (final_state_sim == current_goal_state)
 
                      solution_found_msg = f"{algo_name} found a plan of length {path_steps} actions."
-                     if algo_name in ["Sensorless", "DFS_Belief"]: # Mention belief space for these
+                     if algo_name in ["bfs_belief_search"]: # Mention belief space for these
                           solution_found_msg += "\n(Plan guarantees goal if starting from initial belief set.)"
                           solution_found_msg += f"\nSimulating plan from current Start state reaches goal: {is_goal_reached_sim}"
 
@@ -1496,8 +1803,7 @@ class PuzzleGUI:
     def stop_animation(self):
         if self.animation_running:
             self.stop_animation_flag = True
-
-
+            
 # --- Main Execution ---
 if __name__ == "__main__":
     root = tk.Tk()
