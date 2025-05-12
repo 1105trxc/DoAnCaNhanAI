@@ -19,8 +19,7 @@ Dựa trên các thuật toán đã triển khai, chúng ta có thể phân chú
         *   **UCS (Uniform Cost Search):** Mở rộng nút có chi phí đường đi thực tế thấp nhất, tìm đường đi có chi phí thấp nhất.
         *   **DLS (Limited Depth Search):** Duyệt sâu có giới hạn độ sâu.
         *   **IDS (Iterative Deepening Depth-First Search):** Lặp lại DLS với độ sâu tăng dần.
-        *   **Sensorless Search (BFS on Belief Space):** Tìm kiếm rộng trước trên không gian các tập hợp trạng thái có thể.
-        *   **DFS on Belief Space:** Tìm kiếm sâu trước trên không gian các tập hợp trạng thái có thể.
+
 2.  **Informed State Space Search (Tìm kiếm trên Không gian Trạng thái có Thông tin):**
     *   Nhóm các thuật thuật tìm kiếm trên không gian trạng thái mà **sử dụng thông tin heuristic** (ước lượng khoảng cách đến mục tiêu) để hướng dẫn tìm kiếm.
     *   **Thuật toán từ code:**
@@ -47,6 +46,7 @@ Dựa trên các thuật toán đã triển khai, chúng ta có thể phân chú
     *   Một loại tìm kiếm trong môi trường phức tạp, không xác, nhiều tác nhân, trạng thái.
     *   **Thuật toán từ code:**
         *   AND-OR Search (AOSearch): Tìm kiếm bằng cách xây dựng cây kế hoạch gồm các node AND và OR nhằm xử lý mọi khả năng có thể xảy ra.
-
+        *   **bfs_belief_search (BFS on Belief Space):** Tìm kiếm theo chiều rộng trên không gian các tập hợp trạng thái có thể.
+        *   **dfs_belief_search (DFS on Belief Space):** Tìm kiếm theo chiều sâu trên không gian các tập hợp trạng thái có thể.
 
 

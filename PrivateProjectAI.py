@@ -71,10 +71,12 @@ def tuple_to_state(state):
 def is_solvable(state, goal_state):
     """Checks if the state is solvable relative to the goal state."""
     flat_state = [val for row in state for val in row if val != 0]
+    goal_flat_state = [val for row in goal_state for val in row if val != 0]
     inversions = sum(1 for i in range(len(flat_state)) for j in range(i + 1, len(flat_state)) if flat_state[i] > flat_state[j])
+    goal_inversions = sum(1 for i in range(len(goal_flat_state)) for j in range(i + 1, len(goal_flat_state)) if goal_flat_state[i] > goal_flat_state[j])
     blank_row = find_zero(state)[0]
     goal_blank_row = find_zero(goal_state)[0]
-    return (inversions % 2) == ((3 - blank_row) % 2) and (inversions % 2) == ((3 - goal_blank_row) % 2)
+    return (inversions % 2 == goal_inversions % 2) and ((blank_row % 2) == (goal_blank_row % 2))
 
 
 ACTION_MAP = {
@@ -719,35 +721,41 @@ def get_successors(state):
     return successors
 
 def is_valid_state(state):
-    """Check if the state contains all numbers from 0 to 8 exactly once."""
-    values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
-    return values == set(range(ROWS * COLS))
+    """Kiểm tra xem trạng thái có hợp lệ không (chứa đủ các số từ 0 đến 8 đúng một lần)."""
+    flat_state = [state[i][j] for i in range(ROWS) for j in range(COLS)]
+    return sorted(flat_state) == list(range(ROWS * COLS))
 
-def and_or_search(state, goal_state, get_successors, node_type='OR', visited=None, find_all_solutions=False):
-    """AND-OR search implementation for validation."""
+def and_or_search(state, goal_state, get_successors, node_type='OR', visited=None, find_all_solutions=False, max_depth=20, max_nodes=1000, timeout=5):
+    """AND-OR search with depth, node, and timeout limits."""
     if visited is None:
         visited = set()
     start_time = time.time()
-    nodes_visited = 0
-    all_solutions = [] if find_all_solutions else None  # Lưu trữ tất cả các giải pháp nếu cần
+    nodes_visited = [0]  # Use list to modify in recursive calls
+    all_solutions = [] if find_all_solutions else None
 
-    def recursive_or_and_search(state, goal_state, get_successors, node_type, visited):
+    def recursive_or_and_search(state, goal_state, get_successors, node_type, visited, depth):
         nonlocal nodes_visited
-        nodes_visited += 1
-        state_tuple = state_to_tuple(state)
+        nodes_visited[0] += 1
 
-        # Điều kiện dừng: Đạt trạng thái mục tiêu và hợp lệ
-        if state == goal_state and is_valid_state(state):
-            return [state]
-        
-        # Kiểm tra trạng thái đã thăm
+        if time.time() - start_time > timeout:
+            print("AND-OR Search timeout.")
+            return None
+        if depth > max_depth:
+            return None
+        if nodes_visited[0] > max_nodes:
+            return None
+
+        state_tuple = state_to_tuple(state)
         if state_tuple in visited:
             return None
         visited.add(state_tuple)
 
+        if state == goal_state and is_valid_state(state):
+            return [state]
+
         if node_type == 'OR':
             for next_state in get_successors(state):
-                result = recursive_or_and_search(next_state, goal_state, get_successors, 'AND', visited.copy())
+                result = recursive_or_and_search(next_state, goal_state, get_successors, 'AND', visited.copy(), depth + 1)
                 if result:
                     return [state] + result
         else:  # node_type == 'AND'
@@ -756,7 +764,7 @@ def and_or_search(state, goal_state, get_successors, node_type='OR', visited=Non
             if not successors:
                 return None
             for next_state in successors:
-                result = recursive_or_and_search(next_state, goal_state, get_successors, 'OR', visited.copy())
+                result = recursive_or_and_search(next_state, goal_state, get_successors, 'OR', visited.copy(), depth + 1)
                 if not result:
                     return None
                 all_results += result
@@ -764,24 +772,16 @@ def and_or_search(state, goal_state, get_successors, node_type='OR', visited=Non
 
         return None
 
-    while True:
-        result = recursive_or_and_search(state, goal_state, get_successors, node_type, visited.copy())
-        if result:
-            if find_all_solutions:
-                all_solutions.append(result)
-                print("Solution found:")
-                for step in result:
-                    for row in step:
-                        print(row)
-                    print()
-                # Xóa trạng thái cuối cùng khỏi `visited` để tiếp tục tìm kiếm
-                visited.discard(state_to_tuple(result[-1]))
-            else:
-                return result, time.time() - start_time, nodes_visited
+    result = recursive_or_and_search(state, goal_state, get_successors, node_type, visited.copy(), 0)
+    if result:
+        if find_all_solutions:
+            all_solutions.append(result)
+            visited.discard(state_to_tuple(result[-1]))
         else:
-            break
+            return result, time.time() - start_time, nodes_visited[0]
+    else:
+        return all_solutions, time.time() - start_time, nodes_visited[0] if find_all_solutions else None
 
-    return all_solutions, time.time() - start_time, nodes_visited if find_all_solutions else None
 
 def calculate_fitness(final_state, goal_state, is_valid_path):
     """Calculates fitness based on inverse Manhattan distance to goal."""
@@ -925,70 +925,110 @@ def genetic_algorithm(start_state, goal_state, population_size=200, max_generati
 
 # --- Backtracking Logic ---
 
-def backtracking(goal_state, algorithm):
-    """Backtracking to find a valid start state for the given algorithm."""
+def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
+    """
+    Hàm Backtracking để tạo ra một ma trận hợp lệ và kiểm tra xem thuật toán có thể giải được không.
+    :param algorithm: Tên thuật toán như "Greedy", "BFS", "A*", v.v.
+    :param goal_state: Trạng thái đích.
+    :param verbose: Bật/tắt log chi tiết.
+    :param max_attempts: Giới hạn số lần thử trạng thái.
+    :return: Trạng thái bắt đầu hợp lệ phù hợp với thuật toán, None nếu không tìm được.
+    """
+    ROWS, COLS = 3, 3
+
     def is_valid_state(state):
-        """Check if the state contains all numbers from 0 to 8 exactly once."""
+        """Kiểm tra xem trạng thái có hợp lệ không (chứa đủ các số từ 0 đến 8)."""
         values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
         return values == set(range(ROWS * COLS))
 
-    def backtrack(state, used, i=0, j=0):
-        """Recursive helper function for backtracking."""
-        print(f"Backtracking step: Filling cell ({i}, {j}) with current state:")
-        for row in state:
-            print(row)
-        print()
+    def is_compatible_with_algorithm(state, algorithm):
+        """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
+        local_search_algorithms = ["SimpleHC", "SteepestHC", "RandomHC", "SA", "GA", "Beam"]
+        belief_space_algorithms = ["BFS_Belief", "DFS_Belief"]
+        if algorithm in local_search_algorithms or algorithm == "AOSeach":
+            return is_solvable(state, goal_state) and state != goal_state
+        if algorithm in belief_space_algorithms:
+            belief_set = generate_initial_belief_set(state, goal_state, use_start_state=True)
+            return state in belief_set or is_solvable(state, goal_state)
+        return is_solvable(state, goal_state)
 
-        if i == ROWS:  # All rows filled
-            if is_valid_state(state):
-                print("Valid state found:")
-                for row in state:
-                    print(row)
-                return state
+    def backtrack(state, used, i=0, j=0, depth=0, attempts=0):
+        """Hàm đệ quy để tìm trạng thái hợp lệ phù hợp với thuật toán."""
+        if attempts >= max_attempts:
+            if verbose:
+                print(f"Reached max attempts ({max_attempts}).")
             return None
 
-        # Move to the next cell
+        if i == ROWS:  # Đã điền đầy đủ ma trận
+            if verbose:
+                print(f"Checking state at depth {depth}:")
+                for row in state:
+                    print(row)
+            if is_valid_state(state) and is_compatible_with_algorithm(state, algorithm):
+                algo_map = {
+                    "DFS": dfs,
+                    "BFS": bfs,
+                    "UCS": ucs,
+                    "A*": a_star,
+                    "Greedy": greedy_best_first,
+                    "IDS": ids,
+                    "IDA*": ida_star,
+                    "SimpleHC": simple_hill_climbing,
+                    "SteepestHC": steepest_ascent_hill_climbing,
+                    "RandomHC": random_hill_climbing,
+                    "SA": simulated_annealing,
+                    "Beam": partial(beam_search, beam_width=5),
+                    "AOSeach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
+                    "BFS_Belief": bfs_belief_search,
+                    "DFS_Belief": dfs_belief_search,
+                    "GA": genetic_algorithm,
+                    "SenSorless": bfs_belief_search
+                }
+                if algorithm in algo_map:
+                    path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
+                    if path and path[-1] == goal_state:  # Ensure goal is reached
+                        if verbose:
+                            print("Found a valid state compatible with the algorithm:")
+                            for row in state:
+                                print(row)
+                        return state
+                else:
+                    if verbose:
+                        print(f"Algorithm {algorithm} not supported for validation.")
+            if verbose:
+                print("State not compatible or algorithm failed, backtracking...\n")
+            return None
+
+        # Di chuyển đến ô tiếp theo
         ni, nj = (i, j + 1) if j < COLS - 1 else (i + 1, 0)
 
-        # Iterate values from 0 to 8 in fixed order
+        # Thử các giá trị từ 0 đến 8
         for num in range(ROWS * COLS):
             if num not in used:
                 state[i][j] = num
                 used.add(num)
-                result = backtrack(state, used, ni, nj)
+                result = backtrack(state, used, ni, nj, depth + 1, attempts + 1)
                 if result:
                     return result
                 used.remove(num)
-                state[i][j] = 0  # Backtrack
+                state[i][j] = 0  # Quay lui
 
         return None
 
-    def find_valid_state():
-        """Iteratively attempt to fill the matrix until a valid state is found."""
-        while True:
-            state = [[0] * COLS for _ in range(ROWS)]
-            print("Attempting to fill the matrix...")
-            result = backtrack(state, set())
-            if result:
-                return result
-            print("Retrying...")
+    # Kiểm tra trạng thái đích hợp lệ
+    if not is_valid_state(goal_state):
+        if verbose:
+            print("Error: Goal state is invalid. It must contain all numbers from 0 to 8 exactly once.")
+        return None
 
-    if algorithm == and_or_search:
-        print("Using AND-OR search for Backtracking...")
-        initial_state = [[0] * COLS for _ in range(ROWS)]
-        result, _, _ = and_or_search(initial_state, goal_state, get_successors, find_all_solutions=False)
-        if result:
-            print("AND-OR search succeeded:")
-            for step in result:
-                print(step)
-            return result[0]  # Return the initial state from the AND-OR search result
-        else:
-            print("AND-OR search failed.")
-            return None
-    else:
-        print("Using standard Backtracking...")
-        return find_valid_state()
-    
+    # Bắt đầu từ trạng thái rỗng
+    initial_state = [[0] * COLS for _ in range(ROWS)]
+    result = backtrack(initial_state, set(), attempts=0)
+    if result is None and verbose:
+        print(f"Backtracking failed: Could not find a valid start state for algorithm {algorithm}.")
+    return result
+
+
 # --- GUI Class ---
 class PuzzleGUI:
     def __init__(self, master):
@@ -1254,8 +1294,7 @@ class PuzzleGUI:
         """Show a dropdown to select an algorithm for Backtracking."""
         def start_backtracking_with_selected_algorithm():
             selected_algo_name = algo_var.get()
-            selected_algo_func = algo_map.get(selected_algo_name)
-            if selected_algo_func:
+            if selected_algo_name:
                 selection_window.destroy()  # Close the selection window
 
                 # Start backtracking to find a valid start state
@@ -1263,7 +1302,7 @@ class PuzzleGUI:
                 self.master.update()
 
                 try:
-                    valid_start_state = backtracking(current_goal_state, selected_algo_func)
+                    valid_start_state = backtracking(selected_algo_name, current_goal_state)
                     if valid_start_state is None:
                         messagebox.showerror("Error", "Failed to find a valid Start State.")
                         self.update_detail_box(status="Failed to find Start State")
@@ -1285,11 +1324,8 @@ class PuzzleGUI:
                     def target():
                         start_time = time.time()
                         try:
-                            # For AO Search, pass the get_successors function as a partial argument
-                            if selected_algo_name == "AOSeach":
-                                result = selected_algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state), get_successors=get_successors)
-                            else:
-                                result = selected_algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                            algo_func = algo_map[selected_algo_name]
+                            result = algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
                             self.master.after(0, self._handle_algorithm_result, result, f"{algo_name} ({selected_algo_name})", time.time() - start_time)
                         except Exception as e:
                             import traceback
@@ -1321,7 +1357,8 @@ class PuzzleGUI:
             "RandomHC": random_hill_climbing,
             "SA": simulated_annealing,
             "Beam": partial(beam_search, beam_width=5),
-            "AOSeach": partial(and_or_search, get_successors=get_successors)
+            "AOSeach": partial(and_or_search, get_successors=get_successors),
+            "Sensorless": bfs_belief_search
         }
 
         algo_var = tk.StringVar(value="DFS")
