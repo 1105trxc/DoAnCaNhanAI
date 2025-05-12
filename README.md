@@ -48,13 +48,13 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
     ![](hieuSuat/BFS.png)
 
     *   **DFS (Depth-First Search):
-    ![](hieusuat/DFS.png)
+    ![](hieuSuat/DFS.png)
 
     *   **UCS (Uniform Cost Search)
-    ![](hieusuat/UCS.png)
+    ![](hieuSuat/UCS.png)
 
     *   **IDS (Iterative Deepening Search)
-    ![](hieusuat/IDS.png)
+    ![](hieuSuat/IDS.png)
 
 
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
@@ -99,10 +99,10 @@ Nhóm thuật toán này sử dụng **thông tin bổ sung** (thường là hà
     ![](hieuSuat/A_star.png)
 
     *   **Greedy Best-First Search:
-    ![](hieusuat/Greedy.png)
+    ![](hieuSuat/Greedy.png)
 
     *   IDA\* (Iterative Deepening A\*):
-    ![](hieusuat/IDA_star.png)
+    ![](hieuSuat/IDA_star.png)
 
    
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
@@ -165,7 +165,7 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
     ![](hieuSuat/Beam.png)
 
     *   **Genetic Algorithm: 
-    ![](hieusuat/GA.png)
+    ![](hieuSuat/GA.png)
 
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
     *   Về Độ dài đường đi (Path Steps):
@@ -214,10 +214,10 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các k�
 
 *   **Hình ảnh so sánh hiệu suất:**
     *   No Observation (Không quan sát được):
-    ![](hieusuat/Sensorless.png)
+    ![](hieuSuat/Sensorless.png)
 
     *   Partially Observable (Quan sát được một phần):
-    ![](hieusuat/POsearch.png)
+    ![](hieuSuat/POsearch.png)
 
 
 *   Về Độ dài đường đi (Path Steps):
@@ -286,25 +286,25 @@ Trong bài toán CSP, chúng ta cần tìm và gán giá trị cho một tập h
     ![](Gif/AC3A.gif)
     *   **AC3 cho Beam Search (Thuật toán nhóm Local Search):
     ![](Gif/AC3Beam.gif)
-    
+
 *   **Hình ảnh so sánh hiệu suất:**
     *   **Backtracking cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](hieusuat/BackTrackingBFS.png)
+    ![](hieuSuat/BackTrackingBFS.png)
 
     *   **AC3 cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](hieusuat/AC3BFS.png)
+    ![](hieuSuat/AC3BFS.png)
 
     *   **Backtracking cho A* (Thuật toán nhóm Informed Search):
-    ![](hieusuat/BackTrackingA.png)
+    ![](hieuSuat/BackTrackingA.png)
 
     *   **AC3 cho A* (Thuật toán nhóm Informed Search):
-    ![](hieusuat/AC3A.png)
+    ![](hieuSuat/AC3A.png)
 
     *   **Backtracking cho Beam Search (Thuật toán nhóm Local Search):
-    ![](hieusuat/BackTrackingBeam.png)
+    ![](hieuSuat/BackTrackingBeam.png)
 
     *   **AC3 cho Beam Search (Thuật toán nhóm Local Search):
-    ![](hieusuat/AC3Beam.png)
+    ![](hieuSuat/AC3Beam.png)
 
 Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái bắt đầu, chúng ta có thể so sánh hiệu suất của phương pháp "Backtracking for Algorithm X" và "AC3 for Algorithm X" thông qua ba thuật toán cụ thể là A*, BeamSearch, và BFS.
 
