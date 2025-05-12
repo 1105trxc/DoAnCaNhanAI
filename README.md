@@ -35,28 +35,37 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
 
 *   **Các thuật toán trong nhóm này được triển khai:**
     *   **BFS (Breadth-First Search):** Tìm kiếm theo chiều rộng. Duyệt qua không gian trạng thái theo từng lớp độ sâu. Đảm bảo tính đầy đủ và tối ưu trên đồ thị này.
-     ![](Gif/BFS.gif)
+    ![](Gif/BFS.gif)
     *   **DFS (Depth-First Search):** Tìm kiếm theo chiều sâu. Duyệt xuống sâu nhất có thể trước khi quay lui. Triển khai có sử dụng `visited` set để tránh lặp vô hạn.
-    
+    *   **(số bước giải rất lớn, thời gian giải lâu nên phần này em không có gif)
     *   **UCS (Uniform Cost Search):** Tìm kiếm chi phí đồng nhất. Mở rộng nút có chi phí đường đi thấp nhất. Đảm bảo tính đầy đủ và tối ưu.
-     ![](Gif/UCS.gif)
+    ![](Gif/UCS.gif)
     *   **IDS (Iterative Deepening Search):** Tìm kiếm tăng dần độ sâu. Thực hiện DLS (Depth-Limited Search) lặp đi lặp lại với giới hạn độ sâu tăng dần. Triển khai theo cách lặp tường minh để tránh giới hạn đệ quy Python. Đảm bảo tính đầy đủ và tối ưu.
-     ![](Gif/IDS.gif)
-
-*   **Hình ảnh gif của từng thuật toán khi áp dụng lên trò chơi:**
-    *   *(Chèn GIF trực quan cho BFS tại đây)*
-    *   *(Chèn GIF trực quan cho DFS tại đây)*
-    *   *(Chèn GIF trực quan cho UCS tại đây)*
-    *   *(Chèn GIF trực quan cho IDS tại đây)*
+    ![](Gif/IDS.gif)
 
 *   **Hình ảnh so sánh hiệu suất:**
-    *   *(Thu thập dữ liệu về Thời gian, Số nút đã duyệt, Độ dài đường đi cho mỗi thuật toán trên một vài trạng thái bắt đầu khác nhau. Tạo bảng hoặc biểu đồ so sánh và chèn hình ảnh tại đây.)*
+    *   **BFS (Breadth-First Search):
+    ![](hieuSuat/BFS.png)
+    *   **DFS (Depth-First Search):
+    ![](hieSuat/DFS.png)
+    *   **UCS (Uniform Cost Search)
+    ![](hieSuat/UCS.png)
+    *   **IDS (Iterative Deepening Search)
+    ![](hieSuat/IDS.png)
 
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
-    *   Các thuật toán này thường kém hiệu quả về thời gian và bộ nhớ cho các bài toán có không gian trạng thái lớn.
-    *   BFS tốn nhiều bộ nhớ nhất.
-    *   DFS và UCS có thể tìm lời giải không tối ưu (DFS) hoặc tốn nhiều thời gian/nút duyệt so với Informed Search.
-    *   IDS là sự cân bằng tốt giữa DFS và BFS/UCS trên 8-Puzzle, hiệu quả về bộ nhớ (như DFS) và đảm bảo tính đầy đủ/tối ưu (như BFS/UCS).
+    *   Về Độ dài đường đi (Path Steps):
+        *   BFS, UCS, và IDS tìm thấy đường đi có độ dài 23 bước.
+        *   DFS tìm thấy đường đi có độ dài 7113 bước.
+    *   Về Số nút đã duyệt (Nodes):
+        *   DFS duyệt ít nút nhất (7297 nút).
+        *   UCS duyệt ít nút hơn BFS (103936 so với 115372 nút).
+        *   IDS duyệt nhiều nút nhất (659337 nút).
+    *   Về Thời gian thực thi (Time):
+        *   DFS là thuật toán nhanh nhất (0.604 giây).
+        *   BFS (1.297 giây) nhanh hơn UCS (1.880 giây).
+        *   IDS là thuật toán chậm nhất (6.926 giây).
+    *   Nhận xét tổng hợp: BFS, UCS và IDS tìm thấy đường đi tối ưu (23 bước). DFS tìm đường đi không tối ưu (7113 bước). DFS là nhanh nhất và duyệt ít nút nhất trong trường hợp này, trong khi IDS là chậm nhất và duyệt nhiều nút nhất.
 
 ### 2.2. Các thuật toán Tìm kiếm có thông tin (Informed Search)
 
@@ -66,22 +75,35 @@ Nhóm thuật toán này sử dụng **thông tin bổ sung** (thường là hà
 
 *   **Các thuật toán trong nhóm này được triển khai:**
     *   **A\* (A-Star Search):** Mở rộng nút có chi phí ước lượng thấp nhất (`f(n) = g(n) + h(n)`). Với heuristic Manhattan, A\* là đầy đủ và tối ưu.
+    ![](Gif/A_star.gif)
     *   **Greedy Best-First Search:** Mở rộng nút có chi phí ước lượng đến đích thấp nhất (`h(n)`). Thường nhanh nhưng không đảm bảo tính tối ưu hoặc đầy đủ.
+    ![](Gif/Greedy.gif)
     *   **IDA\* (Iterative Deepening A\*):** Kết hợp tăng dần giới hạn (như IDS) với hàm heuristic (như A\*). Hiệu quả về bộ nhớ và đảm bảo tính đầy đủ/tối ưu với heuristic Manhattan.
-
-*   **Hình ảnh gif của từng thuật toán khi áp dụng lên trò chơi:**
-    *   *(Chèn GIF trực quan cho A\* tại đây)*
-    *   *(Chèn GIF trực quan cho Greedy Best-First Search tại đây)*
-    *   *(Chèn GIF trực quan cho IDA\* tại đây)*
+    ![](Gif/IDA_star.gif)
 
 *   **Hình ảnh so sánh hiệu suất:**
-    *   *(Thu thập dữ liệu về Thời gian, Số nút đã duyệt, Độ dài đường đi cho mỗi thuật thuật toán. So sánh chúng với nhau và với nhóm uninformed. Tạo bảng hoặc biểu đồ so sánh và chèn hình ảnh tại đây.)*
-
+    *   **A\* (A-Star Search):
+    ![](hieuSuat/A_star.png)
+    *   **Greedy Best-First Search:
+    ![](hieSuat/Greedy.png)
+    *   IDA\* (Iterative Deepening A\*):
+    ![](hieSuat/IDA_star.png)
+   
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
-    *   Các thuật toán có thông tin (đặc biệt là A\* và IDA\*) **hiệu quả hơn đáng kể** so với nhóm không có thông tin về thời gian và số nút duyệt cho 8-Puzzle.
-    *   A\* thường tìm đường đi tối ưu nhanh nhất về số nút duyệt.
-    *   IDA\* là lựa chọn tốt khi bộ nhớ hạn chế.
-    *   Greedy Best-First rất nhanh nhưng kết quả có thể không tối ưu.
+    *   Về Độ dài đường đi (Path Steps):
+        *   A* và IDA* tìm thấy đường đi có độ dài 23 bước. Đây là độ dài tối ưu cho bài toán này.
+        *   Greedy Best-First Search tìm đường đi có độ dài 79 bước.
+    *   Về Số nút đã duyệt (Nodes):
+        *   A* là nhanh thứ hai (0.013s).
+        *   Greedy Best-First Search là nhanh nhất (0.007s).
+        *   IDA* chậm hơn A* một chút (0.023s).
+    *   Về Thời gian thực thi (Time):
+        *   DFS là thuật toán nhanh nhất (0.604 giây).
+        *   BFS (1.297 giây) nhanh hơn UCS (1.880 giây).
+        *   IDS là thuật toán chậm nhất (6.926 giây).
+    *   Nhận xét tổng hợp: BFS, UCS và IDS tìm thấy đường đi tối ưu (23 bước). DFS tìm đường đi không tối ưu (7113 bước). DFS là nhanh nhất và duyệt ít nút nhất trong trường hợp này, trong khi IDS là chậm nhất và duyệt nhiều nút nhất.
+        *   A* và IDA* tìm thấy lời giải tối ưu. Greedy Best-First Search không đảm bảo tính tối ưu.
+        *   Greedy Best-First Search hiệu quả nhất về thời gian và số nút duyệt trong trường hợp này.
 
 ### 2.3. Các thuật toán Tìm kiếm cục bộ (Local Search)
 
@@ -93,6 +115,7 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
     *   **Random Hill Climbing:** Chọn ngẫu nhiên một hàng xóm tốt hơn từ danh sách các hàng xóm tốt hơn.
     *   **Simulated Annealing (SA):** Tương tự Hill Climbing nhưng cho phép di chuyển đến trạng thái xấu hơn theo xác suất (giảm dần theo thời gian/nhiệt độ) để thoát khỏi cực tiểu cục bộ.
     *   **Beam Search:** Duy trì một tập hợp (chùm) các trạng thái tốt nhất hiện tại (dựa trên heuristic) và mở rộng chúng ở mỗi bước, sau đó chỉ giữ lại những trạng thái tốt nhất từ các trạng thái mới sinh ra.
+    ![](Gif/Beam.gif)
 
 *   **Hình ảnh gif của từng thuật toán:**
     *   *(Chèn GIF trực quan cho Simple Hill Climbing tại đây)*

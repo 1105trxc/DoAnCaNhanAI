@@ -576,7 +576,7 @@ def steepest_ascent_hill_climbing(start, goal):
     return path, time_taken, nodes_evaluated
 
 
-def random_hill_climbing(start, goal, max_iterations=10000):
+def stochastic_hill_climbing(start, goal, max_iterations=10000):
     """Random Hill Climbing (State Space)."""
     print("Running Random Hill Climbing...")
     current = start
@@ -943,7 +943,7 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
 
     def is_compatible_with_algorithm(state, algorithm):
         """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
-        local_search_algorithms = ["SimpleHC", "SteepestHC", "RandomHC", "SA", "GA", "Beam"]
+        local_search_algorithms = ["SimpleHC", "SteepestHC", "StochasticHC", "SA", "GA", "Beam"]
         belief_space_algorithms = ["BFS_Belief", "DFS_Belief"]
         if algorithm in local_search_algorithms or algorithm == "AOSeach":
             return is_solvable(state, goal_state) and state != goal_state
@@ -975,7 +975,7 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
                     "IDA*": ida_star,
                     "SimpleHC": simple_hill_climbing,
                     "SteepestHC": steepest_ascent_hill_climbing,
-                    "RandomHC": random_hill_climbing,
+                    "StochasticHC": stochastic_hill_climbing,
                     "SA": simulated_annealing,
                     "Beam": partial(beam_search, beam_width=5),
                     "AOSeach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
@@ -1086,7 +1086,7 @@ class PuzzleGUI:
 
         self.buttons = []
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
-                        "SimpleHC", "SteepestHC", "RandomHC", "SA", "Beam", "AOSerach",
+                        "SimpleHC", "SteepestHC", "StochasticHC", "SA", "Beam", "AOSerach",
                         "BFS_Belief", "DFS_Belief",
                         "GA", "Backtracking"]
         beam_width_default = 5
@@ -1101,7 +1101,7 @@ class PuzzleGUI:
             "IDA*": ida_star,
             "SimpleHC": simple_hill_climbing,
             "SteepestHC": steepest_ascent_hill_climbing,
-            "RandomHC": random_hill_climbing,
+            "StochasticHC": stochastic_hill_climbing,
             "SA": simulated_annealing,
             "Beam": partial(beam_search, beam_width=beam_width_default),
             "AOSerach": partial(and_or_search, get_successors=get_successors),
@@ -1354,11 +1354,12 @@ class PuzzleGUI:
             "IDA*": ida_star,
             "SimpleHC": simple_hill_climbing,
             "SteepestHC": steepest_ascent_hill_climbing,
-            "RandomHC": random_hill_climbing,
+            "StochasticHC": stochastic_hill_climbing,
             "SA": simulated_annealing,
             "Beam": partial(beam_search, beam_width=5),
             "AOSeach": partial(and_or_search, get_successors=get_successors),
-            "Sensorless": bfs_belief_search
+            "Sensorless": bfs_belief_search,
+            "GA": genetic_algorithm
         }
 
         algo_var = tk.StringVar(value="DFS")
