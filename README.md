@@ -35,7 +35,8 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
 
 *   **Các thuật toán trong nhóm này được triển khai:**
     *   **BFS (Breadth-First Search):** Tìm kiếm theo chiều rộng. Duyệt qua không gian trạng thái theo từng lớp độ sâu. Đảm bảo tính đầy đủ và tối ưu trên đồ thị này.
-    ![](BFS.gif)
+      
+    * ![](BFS.gif)
 
     *   **DFS (Depth-First Search):** Tìm kiếm theo chiều sâu. Duyệt xuống sâu nhất có thể trước khi quay lui. Triển khai có sử dụng `visited` set để tránh lặp vô hạn.
     *   **UCS (Uniform Cost Search):** Tìm kiếm chi phí đồng nhất. Mở rộng nút có chi phí đường đi thấp nhất. Đảm bảo tính đầy đủ và tối ưu.
