@@ -35,12 +35,13 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
 
 *   **Các thuật toán trong nhóm này được triển khai:**
     *   **BFS (Breadth-First Search):** Tìm kiếm theo chiều rộng. Duyệt qua không gian trạng thái theo từng lớp độ sâu. Đảm bảo tính đầy đủ và tối ưu trên đồ thị này.
-      
-    * ![](BFS.gif)
-
+     ![](Gif/BFS.gif)
     *   **DFS (Depth-First Search):** Tìm kiếm theo chiều sâu. Duyệt xuống sâu nhất có thể trước khi quay lui. Triển khai có sử dụng `visited` set để tránh lặp vô hạn.
+    
     *   **UCS (Uniform Cost Search):** Tìm kiếm chi phí đồng nhất. Mở rộng nút có chi phí đường đi thấp nhất. Đảm bảo tính đầy đủ và tối ưu.
+     ![](Gif/UCS.gif)
     *   **IDS (Iterative Deepening Search):** Tìm kiếm tăng dần độ sâu. Thực hiện DLS (Depth-Limited Search) lặp đi lặp lại với giới hạn độ sâu tăng dần. Triển khai theo cách lặp tường minh để tránh giới hạn đệ quy Python. Đảm bảo tính đầy đủ và tối ưu.
+     ![](Gif/IDS.gif)
 
 *   **Hình ảnh gif của từng thuật toán khi áp dụng lên trò chơi:**
     *   *(Chèn GIF trực quan cho BFS tại đây)*
