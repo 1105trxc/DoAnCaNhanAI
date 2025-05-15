@@ -196,7 +196,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các k�
 Đây là nhóm thuật toán giải quyết các bài toán khi agent không biết chính xác trạng thái của mình, mà chỉ duy trì một tập hợp các trạng thái có thể (tập hợp niềm tin). Mục tiêu là tìm một chuỗi hành động đảm bảo đạt được trạng thái đích bất kể trạng thái ban đầu là gì (miễn là nó thuộc vào tập hợp niềm tin ban đầu). Các hành động được áp dụng cho toàn bộ tập hợp niềm tin.
 
 *   **Các thành phần chính:**
-    *   **Trạng thái niềm tin (Belief State):** Một tập hợp các trạng thái  có thể của bàn cờ 8 ô chữ.
+    *   **Trạng thái niềm tin (Belief State):** Một tập hợp các trạng thái có thể của bàn cờ 8 ô chữ.
     *   **Trạng thái niềm tin ban đầu:** [[1, 2, 3], [4, 0, 5], [6, 7, 8]].
     *   **Hành động:** Một hành động được coi là khả thi trên không gian niềm tin nếu nó khả thi ở **tất cả** các trạng thái  trong tập hợp niềm tin hiện tại.
     *   **Mô hình chuyển đổi niềm tin:** Từ tập hợp niềm tin hiện tại, xác định tập hợp niềm tin mới bao gồm tất cả các trạng thái có thể đạt được.
@@ -243,17 +243,22 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các k�
     *   Nút AND: Thành công nếu *tất cả* các nhánh con (hàng xóm) dẫn đến lời giải.
     *   Sử dụng cơ chế ngăn chặn chu trình trong đường đi khám phá hiện tại.
 
-*   **Hình ảnh gif của thuật toán:**
-    *   [Chèn GIF trực quan cho Thuật toán Thử nghiệm Custom AND/OR (AOSerach) tại đây. Hoạt họa sẽ hiển thị chuỗi trạng thái mà thuật toán trả về.]
+*   **Các thành phần chính của bài toán tìm kiếm:**
+    *   **Trạng thái (State):** Một cấu hình cụ thể của bàn cờ 8 ô chữ.
+    *   **Trạng thái bắt đầu (Initial State):** [[1, 2, 3], [4, 5, 6], [7, 0, 8]].
+    *   **Trạng thái đích (Goal State):** [[1, 2, 3], [4, 5, 6], [7, 8, 0]].
+    *   **Các hành động/Phép toán (Actions/Operators):** Các di chuyển hợp lệ của ô trống (lên, xuống, trái, phải).
+    *   **Mô hình chuyển đổi (Transition Model): Mô tả cách một hành động cụ thể làm thay đổi trạng thái hiện tại để tạo ra trạng thái mới (được thực hiện bởi hàm apply_action và get_successors).
+    *   **Lời giải (Solution):** Một chuỗi các hành động từ trạng thái bắt đầu đến trạng thái đích.
 
-*   **Hình ảnh so sánh hiệu suất:**
-    *   [Thu thập dữ liệu. Báo cáo Thời gian, Số nút đã duyệt, và Độ dài đường đi (số trạng thái) mà thuật toán trả về.]
+*   **Hình ảnh gif của thuật toán:**
+    ![](Gif/AOsearch.gif)
+
+*   **Hình ảnh hiệu suất:**
+    ![](hieuSuat/AndOrSearch.png)
 
 *   **Nhận xét về hiệu suất khi áp dụng lên 8 ô chữ:**
-    *   Đây là một cách áp dụng **không chuẩn mực** của khái niệm AND/OR Search cho bài toán tìm kiếm đường đi tuyến tính trong không gian trạng thái phẳng của 8-Puzzle.
-    *   Do bản chất của logic AND và cách xây dựng đường đi của nó không phù hợp với cấu trúc bài toán 8-Puzzle, thuật toán này dự kiến sẽ **không tìm thấy lời giải hợp lý hoặc tối ưu** cho các bài toán 8-Puzzle thông thường.
-    *   Hiệu suất (thời gian, số nút duyệt) có thể biến động và thường không hiệu quả so với các thuật toán tìm kiếm trạng thái chuẩn mực.
-    *   [Nếu có kết quả chạy thực tế thành công, hãy bổ sung nhận xét dựa trên dữ liệu đó.]
+    *   Do bản chất của logic AND và cách xây dựng đường đi của nó không phù hợp với cấu trúc bài toán 8-Puzzle, thuật toán này sẽ **không tìm thấy lời giải hợp lý và tối ưu** cho các bài toán 8-Puzzle thông thường, chỉ tìm được lời giải cho trạng thái đơn giản như [[1, 2, 3], [4, 5, 6], [7, 0, 8]] .
 
 ### 2.5. Các Thuật toán tìm kiếm có ràng buộc (Constraint Satisfaction Problems - CSP)
 
@@ -306,7 +311,7 @@ Trong bài toán CSP, chúng ta cần tìm và gán giá trị cho một tập h
     *   **AC3 cho Beam Search (Thuật toán nhóm Local Search):
     ![](hieuSuat/AC3Beam.png)
 
-Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái bắt đầu, chúng ta có thể so sánh hiệu suất của phương pháp "Backtracking for Algorithm X" và "AC3 for Algorithm X" thông qua ba thuật toán cụ thể là A*, BeamSearch, và BFS.
+Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái bắt đầu, chúng ta có thể so sánh hiệu suất của phương pháp "Backtracking" và "AC3" thông qua ba thuật toán cụ thể là A*, BeamSearch, và BFS.
 
 **So sánh Hiệu suất Sinh trạng thái: Backtracking vs AC3**
 
@@ -332,6 +337,42 @@ Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái
     *   Chỉ với A*, phương pháp Backtracking yêu cầu số bước sinh nhiều hơn đáng kể (50 vs 106). 
 
 **Kết luận**: Dựa trên các kết quả cụ thể này, phương pháp "Backtracking" cho thấy hiệu suất tốt hơn trong việc sinh ra trạng thái bắt đầu phù hợp so với phương pháp "AC3", thể hiện qua thời gian thực thi nhanh hơn và số nút duyệt ít hơn trong hầu hết các trường hợp.
+
+Tuyệt vời, bạn muốn thêm một mục mới về **Thuật toán tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)** và trình bày thuật toán **Q-Learning** mà bạn đã triển khai.
+
+Dựa trên code Q-Learning bạn vừa cung cấp, tôi sẽ soạn mục 2.6 này, trình bày khái niệm cơ bản của Học tăng cường và chi tiết về triển khai Q-Learning của bạn.
+
+---
+
+### 2.6. Các thuật toán Tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)
+
+Học tăng cường, nơi một agent học cách hành động trong một môi trường để tối đa hóa tổng phần thưởng nhận được theo thời gian. Agent học thông qua tương tác (thử và sai) với môi trường, thực hiện các hành động và nhận phản hồi dưới dạng phần thưởng hoặc hình phạt.
+
+*   **Các thành phần chính:**
+    *   **Môi trường (Environment):** Bài toán 8 ô chữ.
+    *   **Agent:** Bộ giải 8-Puzzle, học cách chọn hành động.
+    *   **Trạng thái (State):** Một cấu hình cụ thể của bàn cờ 8 ô chữ.
+    *   **Hành động (Action):** Một di chuyển hợp lệ của ô trống.
+    *   **Chính sách (Policy):** Chiến lược mà agent sử dụng để chọn hành động trong một trạng thái cụ thể.
+    *   **Phần thưởng (Reward):** Phản hồi nhận được từ môi trường sau khi thực hiện một hành động (ví dụ: phần thưởng lớn khi đạt đích, hình phạt khi di chuyển không hợp lệ hoặc di chuyển xa đích).
+    *   **Hàm giá trị (Value Function):** Dự đoán tổng phần thưởng tương lai mà agent có thể nhận được từ một trạng thái hoặc một cặp (trạng thái, hành động).
+
+*   **Thuật toán trong nhóm này được triển khai:**
+
+    *   **Q-Learning:**
+        *   **Mô tả:** Q-Learning là một thuật toán học tăng cường không cần mô hình (model-free). Nó học một hàm giá trị hành động, gọi là Q-function (Q(s, a)), lưu trữ trong một bảng (Q-table). Q(s, a) ước tính tổng phần thưởng tương lai kỳ vọng khi thực hiện hành động `a` trong trạng thái `s` và sau đó đi theo chính sách tối ưu. Agent học Q-function thông qua thử và sai, cập nhật các giá trị trong Q-table dựa trên phần thưởng nhận được và giá trị Q ước tính của trạng thái tiếp theo.
+
+        *   **Hình ảnh gif của thuật toán:**
+        ![](Gif/QLearning.gif)
+
+        *   **Hình ảnh so sánh hiệu suất:**
+        ![](hieuSuat/QLearning.png)
+
+        *   **Nhận xét về hiệu suất khi áp dụng lên 8 ô chữ:**
+            *   Q-Learning là một thuật toán mạnh mẽ nhưng thường đòi hỏi một lượng lớn kinh nghiệm (nhiều episode và bước) để học được chính sách tốt cho các bài toán có không gian trạng thái lớn như 8-Puzzle, đặc biệt khi chỉ bắt đầu từ một trạng thái bắt đầu cố định.
+            *   Hiệu quả phụ thuộc nhiều vào việc tinh chỉnh các tham số như `alpha`, `gamma`, `epsilon_decay`, `min_epsilon` và số lượng `episodes`.
+            *   Đường đi trích xuất dựa trên Q-table đã học là đường đi theo chính sách tham lam tốt nhất mà agent tìm thấy, không nhất thiết là đường đi tối ưu toàn cục (như A*).
+            *   Kích thước Q-table phản ánh số lượng các trạng thái-hành động mà agent đã ghé thăm và học được.
 
 ## 3. Kết luận
 

@@ -13,8 +13,10 @@ import sys
 
 # --- Core Logic ---
 ROWS, COLS = 3, 3
-start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
-#start_state_default = [[1, 2, 3], [5, 4, 6], [0, 7, 8]]
+#start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
+#start_state_default = [[0, 1, 2], [3, 4, 5], [7, 8, 6]]
+#start_state_default = [[1, 2, 3], [4, 5, 6], [0, 8, 7]]
+start_state_default = [[1, 2, 3], [4, 5, 6], [7, 0, 8]]
 goal_state_default = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 current_start_state = copy.deepcopy(start_state_default)
 current_goal_state = copy.deepcopy(goal_state_default)
@@ -92,7 +94,7 @@ def is_solvable(state, goal_state):
 def generate_initial_belief_set(start_state):
     initial_belief_state_tuples = {
         state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 7, 8]]),
-        state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 8, 7]]),
+       #state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 8, 7]]),
         #state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 6, 8]])
     }
     belief_set = [tuple_to_state(state_tuple) for state_tuple in initial_belief_state_tuples]
@@ -195,11 +197,7 @@ def bfs_belief_search(start_state, goal_state):
     return None, time.time() - start_time, belief_state_count  # Tính thời gian thực tế
 
 def get_observation(state):
-    """
-    Trả về quan sát từ trạng thái, giả sử quan sát là vị trí của ô trống.
-    :param state: Trạng thái hiện tại (ma trận 3x3)
-    :return: Vị trí (row, col) của ô trống
-    """
+    """Get the observation from the state."""
     for i in range(3):
         for j in range(3):
             if state[i][j] == 0:
@@ -207,12 +205,7 @@ def get_observation(state):
     return None
 
 def filter_belief_set(belief_set, observation):
-    """
-    Lọc tập niềm tin dựa trên quan sát.
-    :param belief_set: Tập niềm tin hiện tại
-    :param observation: Quan sát nhận được (vị trí ô trống)
-    :return: Tập niềm tin đã được lọc
-    """
+    """Filter the belief set based on the observation."""
     filtered_belief_set = []
     for state in belief_set:
         if get_observation(state) == observation:
@@ -220,12 +213,7 @@ def filter_belief_set(belief_set, observation):
     return filtered_belief_set
 
 def bfs_partially_observable_search(start_state, goal_state):
-    """
-    Chạy BFS trên không gian niềm tin với quan sát (Partially Observable).
-    :param start_state: Trạng thái bắt đầu (không sử dụng để tạo belief set)
-    :param goal_state: Trạng thái mục tiêu
-    :return: Kế hoạch hành động, thời gian và số trạng thái khám phá
-    """
+    """BFS run on belief space with observations."""
     print("Running Partially Observable Search (BFS on Belief Space)...")
 
     # Sử dụng trạng thái mặc định cho belief set
@@ -781,6 +769,7 @@ def is_valid_state(state):
     return sorted(flat_state) == list(range(ROWS * COLS))
 
 def and_or_search(state, goal_state, get_successors, node_type='OR', visited=None, find_all_solutions=False, max_depth=20, max_nodes=1000, timeout=5):
+    
     """AND-OR search with depth, node, and timeout limits."""
     if visited is None:
         visited = set()
@@ -792,6 +781,7 @@ def and_or_search(state, goal_state, get_successors, node_type='OR', visited=Non
         nonlocal nodes_visited
         nodes_visited[0] += 1
 
+        # Kiểm tra giới hạn
         if time.time() - start_time > timeout:
             print("AND-OR Search timeout.")
             return None
@@ -805,27 +795,39 @@ def and_or_search(state, goal_state, get_successors, node_type='OR', visited=Non
             return None
         visited.add(state_tuple)
 
+        # Kiểm tra trạng thái mục tiêu
         if state == goal_state and is_valid_state(state):
             return [state]
 
         if node_type == 'OR':
             for next_state in get_successors(state):
-                result = recursive_or_and_search(next_state, goal_state, get_successors, 'AND', visited.copy(), depth + 1)
-                if result:
-                    return [state] + result
+                if is_solvable(next_state, goal_state):  # Chỉ tiếp tục với trạng thái có thể giải được
+                    result = recursive_or_and_search(next_state, goal_state, get_successors, 'AND', visited.copy(), depth + 1)
+                    if result:
+                        return [state] + result
         else:  # node_type == 'AND'
             all_results = [state]
             successors = get_successors(state)
             if not successors:
                 return None
             for next_state in successors:
-                result = recursive_or_and_search(next_state, goal_state, get_successors, 'OR', visited.copy(), depth + 1)
-                if not result:
-                    return None
-                all_results += result
+                if is_solvable(next_state, goal_state):  # Chỉ tiếp tục với trạng thái có thể giải được
+                    result = recursive_or_and_search(next_state, goal_state, get_successors, 'OR', visited.copy(), depth + 1)
+                    if not result:
+                        return None
+                    all_results += result
             return all_results
 
         return None
+
+    # Kiểm tra trạng thái đầu vào
+    if not is_valid_state(state) or not is_valid_state(goal_state):
+        print("Error: Invalid initial or goal state.")
+        return None, time.time() - start_time, nodes_visited[0]
+
+    if not is_solvable(state, goal_state):
+        print("Error: Initial state is not solvable.")
+        return None, time.time() - start_time, nodes_visited[0]
 
     result = recursive_or_and_search(state, goal_state, get_successors, node_type, visited.copy(), 0)
     if result:
@@ -977,7 +979,6 @@ def genetic_algorithm(start_state, goal_state, population_size=200, max_generati
     print(f"GA: Max generations reached. Best fitness: {best_overall_fitness:.4f}")
     return best_overall_sim_path, time_taken, total_evaluations
 
-
 # --- Backtracking Logic ---
 
 def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
@@ -1028,7 +1029,8 @@ def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
                     "Beam": partial(beam_search, beam_width=5),
                     "AOSeach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
                     "GA": genetic_algorithm,
-                    "SenSorless": bfs_belief_search
+                    "SenSorless": bfs_belief_search,
+                    "Q-Learning": q_learning
                 }
                 if algorithm in algo_map:
                     path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
@@ -1166,7 +1168,8 @@ def ac3(algorithm, goal_state, verbose=True, max_attempts=1000):
                     "AOSerach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
                     "GA": genetic_algorithm,
                     "Sensorless": bfs_belief_search,
-                    "POsearch": bfs_partially_observable_search
+                    "POsearch": bfs_partially_observable_search,
+                    "Q-Learning": q_learning
                 }
                 if algorithm in algo_map:
                     path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
@@ -1185,6 +1188,113 @@ def ac3(algorithm, goal_state, verbose=True, max_attempts=1000):
     if verbose:
         print(f"AC3 failed: Could not find a valid start state after {max_attempts} attempts.")
     return None
+
+def q_learning(start_state, goal_state, episodes=10000, alpha=0.1, gamma=0.95, epsilon=1.0, 
+               epsilon_decay=0.999, min_epsilon=0.05, max_steps_per_episode=10000):
+    
+    """Q-Learning for solving the 8-puzzle with improved exploration and reward structure."""
+    
+    print("Running Q-Learning...")
+    q_table = {}  # Q-table: {(state, action): Q-value}
+    start_time = time.time()
+
+    def state_to_tuple(state):
+        """Convert state to tuple for Q-table keys."""
+        return tuple(tuple(row) for row in state)
+
+    def get_q_value(state, action):
+        """Get Q-value, initializing with optimistic value for unvisited pairs."""
+        return q_table.get((state_to_tuple(state), action), 10.0)  # Optimistic initialization
+
+    def set_q_value(state, action, value):
+        q_table[(state_to_tuple(state), action)] = value
+
+    def choose_action(state, epsilon_now):
+        """Choose action using epsilon-greedy strategy."""
+        if random.random() < epsilon_now:
+            return random.choice(ACTION_LIST)  # Explore
+        q_values = {action: get_q_value(state, action) for action in ACTION_LIST}
+        max_q = max(q_values.values())
+        return random.choice([a for a, q in q_values.items() if q == max_q])  # Exploit
+
+    def calculate_reward(state, next_state, prev_heuristic):
+        """Calculate reward based on progress toward the goal."""
+        if next_state == goal_state:
+            return 100.0  # High reward for reaching the goal
+        elif next_state is None:
+            return -10.0  # Penalty for invalid moves
+        else:
+            current_h = heuristic(next_state, goal_state)
+            # Reward progress toward the goal
+            delta_h = prev_heuristic - current_h
+            return delta_h * 0.5 - 1.0  # Reward heuristic improvement, penalize each step
+
+    states_visited = 0
+    for episode in range(episodes):
+        current_state = copy.deepcopy(start_state)
+        steps = 0
+        visited_in_episode = set()  # Track states to detect cycles
+        prev_h = heuristic(current_state, goal_state)
+
+        if episode % 500 == 0:
+            print(f"Episode {episode}/{episodes}, Q-table size: {len(q_table)}, Epsilon: {epsilon:.3f}")
+
+        while current_state != goal_state and steps < max_steps_per_episode:
+            state_tuple = state_to_tuple(current_state)
+            visited_in_episode.add(state_tuple)
+
+            action = choose_action(current_state, epsilon)
+            next_state = apply_action(current_state, action)
+
+            reward = calculate_reward(current_state, next_state, prev_h)
+
+            if next_state is None:
+                next_state = current_state  # Stay in place for invalid moves
+            else:
+                prev_h = heuristic(next_state, goal_state)
+
+            # Update Q-value
+            max_next_q = max(get_q_value(next_state, a) for a in ACTION_LIST)
+            current_q = get_q_value(current_state, action)
+            new_q = current_q + alpha * (reward + gamma * max_next_q - current_q)
+            set_q_value(current_state, action, new_q)
+
+            current_state = next_state
+            steps += 1
+
+            # Early termination if stuck in a cycle
+            if len(visited_in_episode) > 100 and steps > 100:
+                break
+
+        epsilon = max(min_epsilon, epsilon * epsilon_decay)
+        states_visited += len(visited_in_episode)
+
+    # Extract the best path
+    path = [copy.deepcopy(start_state)]
+    current_state = copy.deepcopy(start_state)
+    steps = 0
+    visited_states = set([state_to_tuple(current_state)])
+    max_path_steps = max_steps_per_episode * 2  # Allow longer path extraction
+
+    while current_state != goal_state and steps < max_path_steps:
+        action = choose_action(current_state, 0)  # Greedy policy
+        next_state = apply_action(current_state, action)
+        if next_state is None or state_to_tuple(next_state) in visited_states:
+            break  # Avoid cycles or invalid moves
+        path.append(copy.deepcopy(next_state))
+        current_state = next_state
+        visited_states.add(state_to_tuple(current_state))
+        steps += 1
+
+    time_taken = time.time() - start_time
+
+    print(f"Q-Learning: Visited {states_visited} unique states, Q-table size: {len(q_table)}")
+    if current_state == goal_state:
+        print(f"Q-Learning: Goal reached in {steps} steps.")
+        return path, time_taken, len(q_table)
+    else:
+        print("Q-Learning: Failed to find a solution.")
+        return path, time_taken, len(q_table)
 
 # --- GUI Class ---
 class PuzzleGUI:
@@ -1245,7 +1355,7 @@ class PuzzleGUI:
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
                         "SimpleHC", "SteepestHC", "StochasticHC", "SA", "Beam", "AOSerach",
                         "Sensorless", "POsearch",  
-                        "GA", "Backtracking", "AC3"]
+                        "GA", "Backtracking", "AC3", "Q-Learning"]
         beam_width_default = 5
 
         algo_map = {
@@ -1266,7 +1376,8 @@ class PuzzleGUI:
             "POsearch": bfs_partially_observable_search,
             "GA": genetic_algorithm,
             "Backtracking": backtracking,
-            "AC3": ac3
+            "AC3": ac3,
+            "Q-Learning": q_learning
         }
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
@@ -1418,6 +1529,10 @@ class PuzzleGUI:
         if algo_name == "Backtracking":
             self.show_backtracking_algorithm_selection(algorithm_func, algo_name)
             return
+        
+        elif algo_name == "AC3":
+            self.show_ac3_algorithm_selection(algorithm_func, algo_name)
+            return
 
         if self.animation_running:
             messagebox.showwarning("Busy", "An animation or algorithm is already running.")
@@ -1518,7 +1633,8 @@ class PuzzleGUI:
             "Beam": partial(beam_search, beam_width=5),
             "AOSeach": partial(and_or_search, get_successors=get_successors),
             "Sensorless": bfs_belief_search,
-            "GA": genetic_algorithm
+            "GA": genetic_algorithm,
+            "Q-Learning": q_learning
         }
 
         algo_var = tk.StringVar(value="DFS")
@@ -1626,7 +1742,8 @@ class PuzzleGUI:
             "AOSerach": partial(and_or_search, get_successors=get_successors),
             "Sensorless": bfs_belief_search,
             "POsearch": bfs_partially_observable_search,
-            "GA": genetic_algorithm
+            "GA": genetic_algorithm,
+            "Q-Learning": q_learning
         }
 
         algo_var = tk.StringVar(value="DFS")
