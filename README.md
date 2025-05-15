@@ -233,7 +233,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 
     
 
-#### 2.4.2. AND/OR (AOSerach)
+#### 2.4.2. AND/OR Search (AOSerach)
 
 Đây là một thuật toán tìm kiếm thử nghiệm được triển khai dựa trên logic AND/OR như đã thảo luận, áp dụng trực tiếp lên **không gian trạng thái vật lý**.
 
@@ -338,12 +338,6 @@ Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái
 
 **Kết luận**: Dựa trên các kết quả cụ thể này, phương pháp "Backtracking" cho thấy hiệu suất tốt hơn trong việc sinh ra trạng thái bắt đầu phù hợp so với phương pháp "AC3", thể hiện qua thời gian thực thi nhanh hơn và số nút duyệt ít hơn trong hầu hết các trường hợp.
 
-Tuyệt vời, bạn muốn thêm một mục mới về **Thuật toán tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)** và trình bày thuật toán **Q-Learning** mà bạn đã triển khai.
-
-Dựa trên code Q-Learning bạn vừa cung cấp, tôi sẽ soạn mục 2.6 này, trình bày khái niệm cơ bản của Học tăng cường và chi tiết về triển khai Q-Learning của bạn.
-
----
-
 ### 2.6. Các thuật toán Tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)
 
 Học tăng cường, nơi một agent học cách hành động trong một môi trường để tối đa hóa tổng phần thưởng nhận được theo thời gian. Agent học thông qua tương tác (thử và sai) với môi trường, thực hiện các hành động và nhận phản hồi dưới dạng phần thưởng hoặc hình phạt.
@@ -376,15 +370,26 @@ Học tăng cường, nơi một agent học cách hành động trong một mô
 
 ## 3. Kết luận
 
-Qua quá trình xây dựng dự án, em đã đạt được một số kết quả. Em đã hiểu hơn về các thuật toán tìm kiếm, có cái nhìn mới mẻ về bộ môn trí tuệ nhân tạo.
-Phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động.
-Trong dự án em đã phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động. Triển khai tương đối thành công 6 nhóm thuật toán tìm kiếm, nhưng khả năng hoạt động vẫn chưa được tối ưu và còn thiếu sót.
-* Tìm kiếm Không có thông tin: BFS, DFS, UCS, IDS.
-* Tìm kiếm Có thông tin: A\*, Greedy Best-First, IDA*.
-* Tìm kiếm Cục bộ: Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
-* Tìm kiếm Trong môi trường phức tạp: Search with no observation, Search with partialy observation, And Or Search.
-* Tìm kiếm Có ràng buộc: Backtracking, AC3.
-* Tìm kiếm Học tăng cường: Q-Learning.
-Em đã trực tiếp quan sát hoạt động của các thuật toán, giúp hiểu hơn về lý thuyết và cách mà các thuật toán tìm kiếm.
-Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất (thời gian, nút duyệt, độ dài đường đi), qua đó thu thập được một cơ sở dữ liệu để dễ dàng có thể so sánh hiệu quả của các thuật toán.
-Thông qua dự án này, em không chỉ nâng cao kiến thức về trí tuệ nhân tạo, mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán, và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
+Qua quá trình xây dựng dự án, em đã đạt được một số kết quả đáng kể, giúp em hiểu sâu sắc hơn về các thuật toán tìm kiếm trong lĩnh vực trí tuệ nhân tạo.
+
+*   **Phát triển ứng dụng GUI trực quan:** Em đã xây dựng một ứng dụng GUI đầy đủ chức năng bằng Tkinter. Ứng dụng này cho phép người dùng tương tác để:
+    *   Chọn và chạy các thuật toán tìm kiếm.
+    *   Xem trực tiếp trạng thái ban đầu, trạng thái đích và trạng thái hiện tại của bài toán.
+    *   Quan sát quá trình giải câu đố 8 ô chữ một cách sinh động thông qua hoạt họa (animation).
+
+*   **Triển khai đa dạng các thuật toán:** Em đã triển khai thành công các thuật toán tìm kiếm thuộc 6 nhóm chính:
+    *   **Tìm kiếm Không có thông tin:** BFS, DFS, UCS, IDS.
+    *   **Tìm kiếm Có thông tin:** A\*, Greedy Best-First, IDA*.
+    *   **Tìm kiếm Cục bộ:** Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
+    *   **Tìm kiếm Trong môi trường phức tạp:** Search with no observation, Search with partially observation, AND/OR Search.
+    *   **Tìm kiếm Có ràng buộc:** Backtracking (dùng để sinh trạng thái), AC3 (dùng để sinh trạng thái).
+    *   **Tìm kiếm Học tăng cường:** Q-Learning.
+
+*   **Trực tiếp quan sát và hiểu thuật toán:** Việc được trực tiếp quan sát từng bước hoạt động của các thuật toán trên giao diện đã giúp em củng cố lý thuyết và có cái nhìn trực quan hơn về cách mà mỗi thuật toán khám phá không gian tìm kiếm.
+
+*   **Thu thập và phân tích hiệu suất:** Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất quan trọng như thời gian thực thi, số nút đã duyệt và độ dài đường đi/kế hoạch. Cơ sở dữ liệu này cho phép em dễ dàng so sánh hiệu quả hoạt động của các thuật toán khác nhau trên cùng một bài toán.
+
+*   **Nâng cao kiến thức và kỹ năng:** Thông qua dự án, em không chỉ nâng cao kiến thức về các phương pháp tìm kiếm trong trí tuệ nhân tạo mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
+
+Mặc dù khả năng hoạt động của một số thuật toán thử nghiệm vẫn chưa được tối ưu và có thể còn thiếu sót so với các triển khai chuyên sâu, dự án này đã thành công trong việc cung cấp một công cụ học tập tương tác và một nền tảng để khám phá các chiến lược tìm kiếm AI.
+
