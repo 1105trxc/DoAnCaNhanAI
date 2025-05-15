@@ -93,9 +93,8 @@ def is_solvable(state, goal_state):
 
 def generate_initial_belief_set(start_state):
     initial_belief_state_tuples = {
-        state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 7, 8]]),
-       #state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 8, 7]]),
-        #state_to_tuple([[1, 2, 3], [4, 0, 5], [7, 6, 8]])
+        state_to_tuple([[1, 2, 3], [4, 0, 5], [6, 7, 8]])
+    
     }
     belief_set = [tuple_to_state(state_tuple) for state_tuple in initial_belief_state_tuples]
     return belief_set

@@ -140,7 +140,7 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
     *   **Stochastic Hill Climbing:** Chọn ngẫu nhiên một hàng xóm tốt hơn từ danh sách các hàng xóm tốt hơn.
     *   Gif dùng chung cho 3 thuật toán Hill Climbing
     ![](Gif/HC.gif)
-    *   **Simulated Annealing (SA):** Tương tự Hill Climbing nhưng cho phép di chuyển đến trạng thái xấu hơn theo xác suất (giảm dần theo thời gian/nhiệt độ) để thoát khỏi cực tiểu cục bộ.
+    *   **Simulated Annealing (SA):** Tương tự Hill Climbing nhưng cho phép di chuyển đến trạng thái xấu hơn theo xác suất (giảm dần theo thời gian) để thoát khỏi cực tiểu cục bộ.
     *   **(số bước giải rất lớn, thời gian giải lâu nên phần này em không có gif)
     *   **Beam Search:** Duy trì một tập hợp (chùm) các trạng thái tốt nhất hiện tại (dựa trên heuristic) và mở rộng chúng ở mỗi bước, sau đó chỉ giữ lại những trạng thái tốt nhất từ các trạng thái mới sinh ra.
     ![](Gif/Beam.gif)
@@ -189,7 +189,7 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
 
 ### 2.4. Các thuật toán Tìm kiếm trong môi trường phức tạp
 
-Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các kịch bản mà agent không có đầy đủ thông tin về trạng thái hiện tại.
+Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các trạng thái mà agent không có đầy đủ thông tin.
 
 #### 2.4.1. Tìm kiếm trên môi trường niềm tin (Belief Space Search / Sensorless Search)
 
@@ -208,7 +208,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các k�
         *   **Mô tả:** Không nhận được bất kỳ thông tin phản hồi hay quan sát nào trong suốt quá trình thực hiện kế hoạch. Thuật toán phải tìm một kế hoạch đảm bảo đạt đích mà không cần biết mình đang ở trạng thái cụ thể nào sau mỗi bước đi. Triển khai sử dụng BFS trên không gian niềm tin để tìm kế hoạch ngắn nhất. Hàm `bfs_belief_search` thực hiện logic này.
         ![](Gif/Sensorless.gif)
 
-    *   **b. Partially Observable (Quan sát được một phần - triển khai bằng BFS):**
+    *   **b. Partially Observation (Quan sát được một phần - triển khai bằng BFS):**
         *   **Mô tả ý tưởng:** Nhận được quan sát sau mỗi bước đi. Quan sát này có thể giúp lọc và thu hẹp tập hợp niềm tin, giảm bớt sự không chắc chắn.
         ![](Gif/POsearch.gif)
 
@@ -216,20 +216,20 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các k�
     *   No Observation (Không quan sát được):
     ![](hieuSuat/Sensorless.png)
 
-    *   Partially Observable (Quan sát được một phần):
+    *   Partially Observation (Quan sát được một phần):
     ![](hieuSuat/POsearch.png)
 
 
 *   Về Độ dài đường đi (Path Steps):
-        *   No Observation và Partially Observable đều thực hiện 14 bước.
+        *   No Observation và Partially Observation đều thực hiện 14 bước.
     *   Về Số các trạng thái đã tìm được:
-        *   No Observation và Partially Observable đều thực hiện duyệt qua 6413 trạng thái.
+        *   No Observation và Partially Observation đều thực hiện duyệt qua 6413 trạng thái.
     *   Về Thời gian tìm được trạng thái niềm tin phù hợp (Time):
         *   No Observation có thời gian tìm kiếm là 13.775s.
-        *   Partially Observable có thời gian tìm kiếm nhanh hơn, là 6.117s.
+        *   Partially Observation có thời gian tìm kiếm nhanh hơn, là 6.117s.
     *   Nhận xét tổng hợp:
         *   Kích thước không gian niềm tin rất lớn, tìm kiếm trạng thái rất mất thời gian.
-        *   Partially Observable có thêm sự hỗ trợ của các hàm lọc trạng thái và qua sát nên tốc độ tìm kiếm nhanh hơn No Observation.
+        *   Partially Observation có thêm sự hỗ trợ của các hàm lọc trạng thái và qua sát nên tốc độ tìm kiếm nhanh hơn No Observation.
 
     
 
@@ -315,7 +315,7 @@ Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái
 
 **So sánh Hiệu suất Sinh trạng thái: Backtracking vs AC3**
 
-| Phương pháp sinh         | Thuật toán kiểm tra | Path Steps (Sinh) | Time (s) | Nodes (Sinh/Kiểm tra) |
+| Phương pháp sinh          | Thuật toán kiểm tra | Path Steps (Sinh) | Time (s) | Nodes (Sinh/Kiểm tra) |
 |---------------------------|---------------------|-------------------|----------|-----------------------|
 | **Backtracking**          | A\*                 | 50                | **0.004**| 242                   |
 | AC3                       | A\*                 | 106               | 0.008    | 521                   |
@@ -369,11 +369,22 @@ Học tăng cường, nơi một agent học cách hành động trong một mô
         ![](hieuSuat/QLearning.png)
 
         *   **Nhận xét về hiệu suất khi áp dụng lên 8 ô chữ:**
-            *   Q-Learning là một thuật toán mạnh mẽ nhưng thường đòi hỏi một lượng lớn kinh nghiệm (nhiều episode và bước) để học được chính sách tốt cho các bài toán có không gian trạng thái lớn như 8-Puzzle, đặc biệt khi chỉ bắt đầu từ một trạng thái bắt đầu cố định.
+            *   Q-Learning là một thuật toán mạnh mẽ nhưng thường đòi hỏi một lượng lớn kinh nghiệm (nhiều episode và bước) để học được lời giải tốt cho các bài toán có không gian trạng thái lớn như 8-Puzzle, đặc biệt khi chỉ bắt đầu từ một trạng thái bắt đầu cố định.
             *   Hiệu quả phụ thuộc nhiều vào việc tinh chỉnh các tham số như `alpha`, `gamma`, `epsilon_decay`, `min_epsilon` và số lượng `episodes`.
             *   Đường đi trích xuất dựa trên Q-table đã học là đường đi theo chính sách tham lam tốt nhất mà agent tìm thấy, không nhất thiết là đường đi tối ưu toàn cục (như A*).
             *   Kích thước Q-table phản ánh số lượng các trạng thái-hành động mà agent đã ghé thăm và học được.
 
 ## 3. Kết luận
 
-Dự án "8-Puzzle Solver Visualization" là một công cụ học tập hữu ích, cung cấp góc nhìn trực quan về hoạt động của nhiều thuật toán tìm kiếm AI kinh điển. Bằng cách trực quan hóa quá trình duyệt trạng thái và so sánh các chỉ số hiệu suất, người dùng có thể hiểu sâu sắc hơn về điểm mạnh, điểm yếu và phạm vi ứng dụng của từng thuật toán trong việc giải quyết bài toán 8 ô chữ. Từ các phương pháp vét cạn đơn giản đến các kỹ thuật heuristic thông minh và các phương pháp metaheuristic, ứng dụng minh họa rõ ràng tầm quan trọng của việc lựa chọn đúng thuật toán và cấu trúc dữ liệu phù hợp với bản chất của bài toán.
+Qua quá trình xây dựng dự án, em đã đạt được một số kết quả. Em đã hiểu hơn về các thuật toán tìm kiếm, có cái nhìn mới mẻ về bộ môn trí tuệ nhân tạo.
+Phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động.
+Trong dự án em đã phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động. Triển khai tương đối thành công 6 nhóm thuật toán tìm kiếm, nhưng khả năng hoạt động vẫn chưa được tối ưu và còn thiếu sót.
+* Tìm kiếm Không có thông tin: BFS, DFS, UCS, IDS.
+* Tìm kiếm Có thông tin: A\*, Greedy Best-First, IDA*.
+* Tìm kiếm Cục bộ: Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
+* Tìm kiếm Trong môi trường phức tạp: Search with no observation, Search with partialy observation, And Or Search.
+* Tìm kiếm Có ràng buộc: Backtracking, AC3.
+* Tìm kiếm Học tăng cường: Q-Learning.
+Em đã trực tiếp quan sát hoạt động của các thuật toán, giúp hiểu hơn về lý thuyết và cách mà các thuật toán tìm kiếm.
+Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất (thời gian, nút duyệt, độ dài đường đi), qua đó thu thập được một cơ sở dữ liệu để dễ dàng có thể so sánh hiệu quả của các thuật toán.
+Thông qua dự án này, em không chỉ nâng cao kiến thức về trí tuệ nhân tạo, mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán, và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
