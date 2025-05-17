@@ -6,8 +6,8 @@
 
 Mục tiêu chính của dự án là:
 
-1.  **Trực quan hóa** cách các thuật toán tìm kiếm khác nhau hoạt động để giải cùng một bài toán (8-Puzzle).
-2.  Giúp người học AI **hiểu rõ hơn** các khái niệm về không gian trạng thái, không gian niềm tin, hàm heuristic và cách các thuật toán duyệt qua không gian đó.
+1.  **Trực quan hóa** cách các thuật toán tìm kiếm khác nhau hoạt động để giải 8-Puzzle.
+2.  Giúp **hiểu rõ hơn** các khái niệm về không gian trạng thái, không gian niềm tin, hàm heuristic và cách các thuật toán duyệt qua không gian đó.
 3.  Cung cấp một công cụ để **so sánh hiệu suất** (thời gian, số nút/trạng thái đã duyệt, độ dài đường đi) của các thuật toán trên các bài toán cụ thể.
 
 ## Nội dung
@@ -17,8 +17,7 @@ Dự án bao gồm:
 *   Cài đặt câu đố 8 ô chữ và các thao tác cơ bản (tìm ô trống, lấy hàng xóm).
 *   Triển khai nhiều thuật toán tìm kiếm AI từ các nhóm khác nhau.
 *   Giao diện người dùng Tkinter để hiển thị trạng thái ban đầu, trạng thái đích, trạng thái hiện tại trong quá trình giải và các thông tin hiệu suất.
-*   Chức năng hoạt họa (animation) quá trình giải theo đường đi tìm được bởi thuật toán.
-*   Chức năng sinh trạng thái bắt đầu mới có thể giải được (Solvable Start State Generation).
+*   Chức năng minh họa (animation) quá trình giải theo đường đi tìm được bởi thuật toán.
 
 ### 2.1. Các thuật toán Tìm kiếm không có thông tin (Uninformed Search)
 
@@ -30,7 +29,7 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
     *   **Trạng thái đích (Goal State):** [[1, 2, 3], [4, 5, 6], [7, 8, 0]].
     *   **Các hành động/Phép toán (Actions/Operators):** Các di chuyển hợp lệ của ô trống (lên, xuống, trái, phải).
     *   **Mô hình chuyển đổi (Transition Model):** Mô tả trạng thái mới sẽ như thế nào sau khi thực hiện một hành động từ trạng thái hiện tại.
-    *   **Chi phí đường đi (Path Cost):** Chi phí tích lũy của chuỗi hành động từ trạng thái bắt đầu đến trạng thái hiện tại (thường là 1 cho mỗi bước di chuyển ô trống trong 8-Puzzle).
+    *   **Chi phí đường đi (Path Cost):** Chi phí tích lũy của chuỗi hành động từ trạng thái bắt đầu đến trạng thái hiện tại.
     *   **Lời giải (Solution):** Một chuỗi các hành động từ trạng thái bắt đầu đến trạng thái đích. Một lời giải tối ưu là lời giải có tổng chi phí đường đi thấp nhất.
 
 *   **Các thuật toán trong nhóm này được triển khai:**
@@ -56,6 +55,14 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
     *   **IDS (Iterative Deepening Search)
     ![](hieuSuat/IDS.png)
 
+*   **Bảng so sánh:**
+
+    | Thuật toán | Độ dài đường đi (Path Steps)| Số nút đã duyệt (Nodes)  | Thời gian (Time)|
+    |------------|-----------------------------|--------------------------|-----------------|
+    | BFS        | 23                          | 115372                   | 1.297s          |
+    | DFS        | 7113                        | 7297                     | 0.604s          |
+    | UCS        | 23                          | 103936                   | 1.880s          |
+    | IDS        | 23                          | 659337                   | 6.926s          |
 
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
     *   Về Độ dài đường đi (Path Steps):
@@ -65,7 +72,7 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
         *   DFS duyệt ít nút nhất (7297 nút).
         *   UCS duyệt ít nút hơn BFS (103936 so với 115372 nút).
         *   IDS duyệt nhiều nút nhất (659337 nút).
-    *   Về Thời gian thực thi (Time):
+    *   Về Thời gian tìm được giải pháp (Time):
         *   DFS là thuật toán nhanh nhất (0.604 giây).
         *   BFS (1.297 giây) nhanh hơn UCS (1.880 giây).
         *   IDS là thuật toán chậm nhất (6.926 giây).
@@ -74,7 +81,6 @@ Nhóm thuật toán này tìm kiếm lời giải mà **không sử dụng bất
 ### 2.2. Các thuật toán Tìm kiếm có thông tin (Informed Search)
 
 Nhóm thuật toán này sử dụng **thông tin bổ sung** (thường là hàm heuristic - hàm ước lượng chi phí từ trạng thái hiện tại đến đích) để hướng dẫn quá trình tìm kiếm, nhằm tìm lời giải hiệu quả hơn so với các thuật toán không có thông tin.
-
 
 *   **Các thành phần chính của bài toán tìm kiếm:**
     *   **Trạng thái (State):** Một cấu hình cụ thể của bàn cờ 8 ô chữ.
@@ -104,8 +110,16 @@ Nhóm thuật toán này sử dụng **thông tin bổ sung** (thường là hà
     *   IDA\* (Iterative Deepening A\*):
     ![](hieuSuat/IDA_star.png)
 
+*   **Bảng so sánh:**
+
+    | Thuật toán                | Độ dài đường đi (Path Steps)| Số nút đã duyệt (Nodes)  | Thời gian (Time) |
+    |---------------------------|-----------------------------|--------------------------|------------------|
+    | A\*                       | 23                          | 1023                     | 0.013s           |
+    | IDA\*                     | 23                          | 3209                     | 0.023s           |
+    | Greedy Best-First Search  | 79                          | 455                      | 0.007s           |
    
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
+
     *   Về Độ dài đường đi (Path Steps):
         *   A* và IDA* tìm thấy đường đi có độ dài 23 bước. Đây là độ dài tối ưu cho bài toán này.
         *   Greedy Best-First Search tìm đường đi có độ dài 79 bước.
@@ -113,7 +127,7 @@ Nhóm thuật toán này sử dụng **thông tin bổ sung** (thường là hà
         *   Greedy Best-First Search duyệt ít nút nhất (455 nút).
         *   A* duyệt số nút trung bình (1023 nút).
         *   IDA* duyệt nhiều nút nhất (3209 nút).
-    *   Về Thời gian thực thi (Time):
+    *   Về Thời gian tìm được giải pháp (Time):
         *   Greedy Best-First Search là nhanh nhất (0.007s).
         *   A* là nhanh thứ hai (0.013s).
         *   IDA* chậm hơn A* một chút (0.023s).
@@ -167,7 +181,19 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
     *   **Genetic Algorithm: 
     ![](hieuSuat/GA.png)
 
+*   **Bảng so sánh:**
+
+    | Thuật toán                     | Độ dài đường đi (Path Steps)| Số nút đã duyệt (Nodes) | Thời gian (Time)|
+    |--------------------------------|-----------------------------|-------------------------|-----------------|
+    | Simple Hill Climbing           | 4                           | 4                       | 0.000s          |
+    | Steepest Ascent Hill Climbing  | 4                           | 4                       | 0.001s          | 
+    | Stochastic Hill Climbing       | 4                           | 4                       | 0.001s          |
+    | Simulated Annealing            | 23962                       | 24510                   | 0.286s          |
+    | Beam Search                    | 4                           | 12                      | 0.000s          |
+    | Genetic Algorithm              | 4                           | 1128                    | 0.074s          |
+
 *   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
+
     *   Về Độ dài đường đi (Path Steps):
         *   Simple HC, Steepest HC, Stochastic HC, và Beam Search tìm thấy đường đi có độ dài 4 bước.
         *   Genetic algorithm tìm thấy đường đi có độ dài 4 bước.
@@ -177,15 +203,15 @@ Các thuật toán này thường chỉ duy trì một hoặc một vài trạng
         *   Beam Search duyệt số nút trung bình (12 nút).
         *   Genetic algorithm duyệt số nút khá nhiều (1128 nút).
         *   Simulated Annealing duyệt nhiều nút nhất (24510 nút).
-    *   Về Thời gian thực thi (Time):
-        *   Simple HC và Beam Search có thời gian thực thi nhanh nhất (0.000s).
+    *   Về Thời gian tìm được giải pháp (Time):
+        *   Simple HC và Beam Search có Thời gian tìm được giải pháp nhanh nhất (0.000s).
         *   Steepest HC và Stochastic HC cũng rất nhanh (0.001s).
         *   Genetic algorithm tương đối nhanh (0.074s).
-        *   Simulated Annealing có thời gian thực thi chậm nhất trong nhóm này (0.286s).
+        *   Simulated Annealing có Thời gian tìm được giải pháp chậm nhất trong nhóm này (0.286s).
     *   Nhận xét tổng hợp: 
         *   Simple HC, Steepest HC, Stochastic HC, Genetic algorithm và Beam Search tìm thấy đường đi ngắn nhất (4 bước). Simulated Annealing tìm đường đi dài hơn đáng kể.
         *   Các thuật toán Hill Climbing (Simple, Steepest, Stochastic), Genetic algorithm và Beam Search thể hiện hiệu suất cao về thời gian và số nút duyệt trong trường hợp này.
-        *   Simulated Annealing khám phá một không gian lớn hơn và có thời gian thực thi cao hơn.
+        *   Simulated Annealing khám phá một không gian lớn hơn và có Thời gian tìm được giải pháp cao hơn.
 
 ### 2.4. Các thuật toán Tìm kiếm trong môi trường phức tạp
 
@@ -198,6 +224,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 *   **Các thành phần chính:**
     *   **Trạng thái niềm tin (Belief State):** Một tập hợp các trạng thái có thể của bàn cờ 8 ô chữ.
     *   **Trạng thái niềm tin ban đầu:** [[1, 2, 3], [4, 0, 5], [6, 7, 8]].
+    *   **Trạng thái đích (Goal State):** [[1, 2, 3], [4, 5, 6], [7, 8, 0]].
     *   **Hành động:** Một hành động được coi là khả thi trên không gian niềm tin nếu nó khả thi ở **tất cả** các trạng thái  trong tập hợp niềm tin hiện tại.
     *   **Mô hình chuyển đổi niềm tin:** Từ tập hợp niềm tin hiện tại, xác định tập hợp niềm tin mới bao gồm tất cả các trạng thái có thể đạt được.
     *   **Lời giải:** Một chuỗi hành động sao cho khi thực hiện chuỗi hành động này, tập hợp niềm tin cuối cùng chỉ chứa trạng thái đích.
@@ -205,7 +232,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 *   **Các thuật toán trong nhóm này được triển khai:**
 
     *   **a. No Observation (Không quan sát được - triển khai bằng BFS):**
-        *   **Mô tả:** Không nhận được bất kỳ thông tin phản hồi hay quan sát nào trong suốt quá trình thực hiện kế hoạch. Thuật toán phải tìm một kế hoạch đảm bảo đạt đích mà không cần biết mình đang ở trạng thái cụ thể nào sau mỗi bước đi. Triển khai sử dụng BFS trên không gian niềm tin để tìm kế hoạch ngắn nhất. Hàm `bfs_belief_search` thực hiện logic này.
+        *   **Mô tả:** Không nhận được bất kỳ thông tin phản hồi hay quan sát nào trong suốt quá trình thực hiện kế hoạch. Thuật toán phải tìm một kế hoạch đảm bảo đạt đích mà không cần biết mình đang ở trạng thái cụ thể nào sau mỗi bước đi. Triển khai sử dụng BFS trên không gian niềm tin để tìm kế hoạch ngắn nhất.
         ![](Gif/Sensorless.gif)
 
     *   **b. Partially Observation (Quan sát được một phần - triển khai bằng BFS):**
@@ -219,8 +246,15 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
     *   Partially Observation (Quan sát được một phần):
     ![](hieuSuat/POsearch.png)
 
+*   **Bảng so sánh:**
+    | Thuật toán                  | Độ dài kế hoạch (Plan Actions)| Số tập hợp niềm tin (Belief States)| Thời gian (Time) |
+    |-----------------------------|-------------------------------|------------------------------------|------------------|
+    |No Observation - BFS         | 14                            | 6413                               | 13.775s          |
+    |Partially Observation - BFS  | 14                            | 6413                               | 6.117s           |
 
-*   Về Độ dài đường đi (Path Steps):
+*   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
+
+    *   Về Độ dài đường đi (Path Steps):
         *   No Observation và Partially Observation đều thực hiện 14 bước.
     *   Về Số các trạng thái đã tìm được:
         *   No Observation và Partially Observation đều thực hiện duyệt qua 6413 trạng thái.
@@ -233,7 +267,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 
     
 
-#### 2.4.2. AND/OR (AOSerach)
+#### 2.4.2. AND/OR Search (AOSerach)
 
 Đây là một thuật toán tìm kiếm thử nghiệm được triển khai dựa trên logic AND/OR như đã thảo luận, áp dụng trực tiếp lên **không gian trạng thái vật lý**.
 
@@ -260,89 +294,74 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 *   **Nhận xét về hiệu suất khi áp dụng lên 8 ô chữ:**
     *   Do bản chất của logic AND và cách xây dựng đường đi của nó không phù hợp với cấu trúc bài toán 8-Puzzle, thuật toán này sẽ **không tìm thấy lời giải hợp lý và tối ưu** cho các bài toán 8-Puzzle thông thường, chỉ tìm được lời giải cho trạng thái đơn giản như [[1, 2, 3], [4, 5, 6], [7, 0, 8]] .
 
-### 2.5. Các Thuật toán tìm kiếm có ràng buộc (Constraint Satisfaction Problems - CSP)
+### 2.5. Các Thuật toán Tìm kiếm Có ràng buộc (Constraint Satisfaction Problems - CSP)
 
-Trong bài toán CSP, chúng ta cần tìm và gán giá trị cho một tập hợp các biến sao cho tất cả các ràng buộc giữa các biến được thỏa mãn. Mặc dù bài toán 8 ô chữ tìm đường đi không phải là CSP điển hình, các khái niệm và thuật toán CSP có thể được áp dụng cho các vấn đề liên quan như:
-
-*   **Tạo một cấu hình bàn cờ 8 ô chữ hợp lệ:** Các biến là các ô trên bàn cờ, miền giá trị của mỗi biến là {0, 1, ..., 8}. Ràng buộc là mỗi giá trị từ 0 đến 8 phải xuất hiện đúng một lần trên bàn cờ.
-*   **Tìm một trạng thái bắt đầu có thể giải được:** Sau khi tạo cấu hình hợp lệ, thêm ràng buộc rằng cấu hình đó phải có cùng tính chẵn lẻ nghịch thế với trạng thái đích (điều kiện để giải được).
+Trong bài toán CSP, mục tiêu là tìm một gán giá trị cho một tập hợp các biến sao cho tất cả các ràng buộc giữa các biến được thỏa mãn. Bài toán CSP: **Điền các số từ 0 đến 8 vào ma trận 3x3, mỗi số một lần, sao cho thỏa mãn các ràng buộc.
 
 *   **Các thành phần chính của bài toán CSP:**
-    *   **Biến (Variables):** Tập hợp các yếu tố cần gán giá trị (9 ô trên bàn cờ 8-Puzzle).
-    *   **Miền giá trị (Domains):** Tập hợp các giá trị có thể gán cho mỗi biến (ví dụ: {0, 1, 2, 3, 4, 5, 6, 7, 8} cho mỗi ô).
-    *   **Ràng buộc (Constraints):** Các điều kiện mà các giá trị được gán phải thỏa mãn (ví dụ: mỗi số từ 0 đến 8 phải xuất hiện duy nhất một lần).
+    *   **Biến:** 9 ô trên bàn cờ 3x3.
+    *   **Miền giá trị:** Tập hợp các số {0, 1, 2, 3, 4, 5, 6, 7, 8} cho mỗi ô.
+    *   **Ràng buộc:**
+        *   **Ràng buộc duy nhất:** Mỗi số từ 0 đến 8 phải xuất hiện đúng một lần trên bàn cờ.
+        *   **Ràng buộc lân cận:** Đối với các ô lân cận (trên/dưới, trái/phải), giá trị của các số phải thỏa mãn một mối quan hệ (trị tuyệt đối hiệu giữa giá trị ô hiện tại và ô bên trái không bằng 1; trị tuyệt đối hiệu giữa giá trị ô hiện tại và ô phía trên không bằng 3). Số 0 (ô trống) có thể được miễn trừ khỏi một số ràng buộc lân cận.
 
-*   **Các thuật toán trong nhóm này được triển khai/áp dụng:**
+*   **Các thuật toán CSP được triển khai:**
 
-    *   **Backtracking: Một thuật toán quay lui được sử dụng để sinh ra các hoán vị hợp lệ của bàn cờ (gán giá trị duy nhất từ 0-8 cho 9 ô). Quá trình này thử điền giá trị vào từng ô và quay lui nếu việc gán không thể hoàn thành một hoán vị hợp lệ.
-    
-    *   **Backtracking cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](Gif/BackTrackingBFS.gif)
-    *   **Backtracking cho A* (Thuật toán nhóm Informed Search):
-    ![](Gif/BackTrackingA.gif)
-    *   **Backtracking cho Beam Search (Thuật toán nhóm Local Search):
-    ![](Gif/BackTrackingBeam.gif)
+    *   **Backtracking:** Đây là một thuật toán tìm kiếm theo chiều sâu để giải CSP. Nó gán giá trị cho từng biến (ô) một cách tăng dần. Tại mỗi bước, nó thử gán một giá trị từ miền giá trị cho ô hiện tại. Nếu việc gán đó vi phạm bất kỳ ràng buộc nào với các ô đã điền trước đó, nó sẽ quay lui (backtrack) và thử giá trị khác. Nếu không có giá trị nào hoạt động cho ô hiện tại, nó quay lui về ô trước đó. Thuật toán dừng khi tìm thấy một gán đầy đủ cho tất cả các biến (điền đầy đủ ma trận) mà không vi phạm ràng buộc.
+    ![](Gif/BackTracKing.gif)
 
-    *   **AC3 (Arc Consistency 3): AC3 là một thuật toán duy trì tính nhất quán cung (arc consistency). Nó loại bỏ các giá trị khỏi miền giá trị của các biến nếu giá trị đó không thể thỏa mãn ràng buộc với bất kỳ giá trị nào trong miền giá trị của biến khác liên quan. AC3 được áp dụng cho ràng buộc "tất cả các giá trị phải khác nhau" giữa các ô.
-    
-    *   **AC3 cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](Gif/AC3BFS.gif)
-    *   **AC3 cho A* (Thuật toán nhóm Informed Search):
-    ![](Gif/AC3A.gif)
-    *   **AC3 cho Beam Search (Thuật toán nhóm Local Search):
-    ![](Gif/AC3Beam.gif)
+    *   **AC3 (Arc Consistency 3):** Phương pháp này kết hợp thuật toán duy trì tính nhất quán (AC3) với Backtracking. Đầu tiên, AC3 được chạy để thu hẹp miền giá trị của các biến bằng cách loại bỏ các giá trị không thể xuất hiện trong bất kỳ lời giải nào thỏa mãn ràng buộc. Sau khi AC3 hoàn tất, Backtrackin được sử dụng để tìm một lời giải cụ thể từ các miền giá trị đã bị thu hẹp.
+    ![](Gif/AC3.gif)
+
+    *   **Kiểm thử (Generate and Test):**  Thuật toán này hoạt động như một quy trình "Sinh và Kiểm tra", điền tăng dần (giống Backtracking Search) để xây dựng các cấu hình. Nếu điền xong và khớp với trạng thái đích, coi là tìm thấy lời giải. Ghi lại tất cả trạng thái trung gian trong quá trình điền/kiểm thử.
+    ![](Gif/GT.gif)
 
 *   **Hình ảnh so sánh hiệu suất:**
-    *   **Backtracking cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](hieuSuat/BackTrackingBFS.png)
+    *   **Backtracking:
+    ![](hieuSuat/Backtracking.png)
 
-    *   **AC3 cho BFS (Thuật toán nhóm Uninformed Search):
-    ![](hieuSuat/AC3BFS.png)
+    *   **AC3 (Arc Consistency 3):
+    ![](hieuSuat/AC3.png)
 
-    *   **Backtracking cho A* (Thuật toán nhóm Informed Search):
-    ![](hieuSuat/BackTrackingA.png)
+    *   **Kiểm thử (Generate and Test):
+    ![](hieuSuat/GT.png)
 
-    *   **AC3 cho A* (Thuật toán nhóm Informed Search):
-    ![](hieuSuat/AC3A.png)
+**Bảng so sánh:**
 
-    *   **Backtracking cho Beam Search (Thuật toán nhóm Local Search):
-    ![](hieuSuat/BackTrackingBeam.png)
+| Thuật toán         | Độ dài đường đi (Path Steps)| Số nút đã duyệt (Nodes) | Thời gian (Time)|
+|--------------------|-----------------------------|-------------------------|-----------------|
+| Backtracking       | 28                          | 29                      | 29.000          |
+| AC3                | 8                           | 9                       | 9.000           |
+| Generate and Test  | 278                         | 143                     | 0.035           |
 
-    *   **AC3 cho Beam Search (Thuật toán nhóm Local Search):
-    ![](hieuSuat/AC3Beam.png)
+*   **Nhận xét về hiệu suất trong nhóm này khi áp dụng lên 8 ô chữ:**
 
-Dựa trên các kết quả bạn cung cấp cho quá trình sinh trạng thái bắt đầu, chúng ta có thể so sánh hiệu suất của phương pháp "Backtracking" và "AC3" thông qua ba thuật toán cụ thể là A*, BeamSearch, và BFS.
+*  Về Độ dài đường đi (Path Steps):
+    *   AC3 có 8 bước.
+    *   Backtracking có 28 bước.
+    *   Generate and Test có 278 bước.
+    *   Ý nghĩa của "Path Steps" ở đây không phải là số bước di chuyển ô trống trong 8-Puzzle thông thường, mà là số bước trong quá trình điền/kiểm tra.
 
-**So sánh Hiệu suất Sinh trạng thái: Backtracking vs AC3**
+*  Về Số nút đã duyệt (Nodes):
+    *   AC3 duyệt ít nút nhất (9 nút).
+    *   Backtracking duyệt số nút trung bình (29 nút).
+    *   Generate and Test duyệt nhiều nút nhất (143 nút).
 
-| Phương pháp sinh          | Thuật toán kiểm tra | Path Steps (Sinh) | Time (s) | Nodes (Sinh/Kiểm tra) |
-|---------------------------|---------------------|-------------------|----------|-----------------------|
-| **Backtracking**          | A\*                 | 50                | **0.004**| 242                   |
-| AC3                       | A\*                 | 106               | 0.008    | 521                   |
-|---------------------------|---------------------|-------------------|----------|-----------------------|
-| **Backtracking**          | BeamSearch          | 22                | 1.133    | 81207                 |
-| AC3                       | BeamSearch          | 25                | **2.188**| 154894                |
-|---------------------------|---------------------|-------------------|----------|-----------------------|
-| **Backtracking**          | BFS                 | 17                | **0.002**| 140                   |
-| AC3                       | BFS                 | 22                | 0.055    | 1349                  |
+*  Về Thời gian tìm được giải pháp (Time):
+    *   Generate and Test là nhanh nhất (0.035s).
+    *   AC3 (9.000s) và Backtracking (29.000s) chậm hơn đáng kể. Backtracking là chậm nhất.
 
-**Nhận xét:**
-1.  **Về Thời gian và Số nút:**
-    *   Trong cả ba cặp so sánh (với A*, BeamSearch, BFS), phương pháp **"Backtracking" nhanh hơn** và **duyệt số nút ít hơn** so với phương pháp "AC3" tương ứng.
-    *   Sự khác biệt rõ rệt nhất nằm ở các trường hợp kiểm tra bằng BeamSearch và BFS, nơi phương pháp Backtracking nhanh hơn đáng kể (1.133s vs 2.188s cho BeamSearch; 0.002s vs 0.055s cho BFS) và duyệt ít nút hơn nhiều (81207 vs 154894 cho BeamSearch; 140 vs 1349 cho BFS).
-    *   Với A*, phương pháp Backtracking cũng nhanh hơn và duyệt ít nút hơn, dù sự khác biệt về thời gian không quá lớn.
+**Nhận xét tổng hợp:**
 
-2.  **Về Số bước sinh (Path Steps):**
-    *   Trong hai trường hợp (với BeamSearch và BFS), phương pháp Backtracking tìm thấy trạng thái phù hợp với số bước sinh ít hơn (22 vs 25; 17 vs 22).
-    *   Chỉ với A*, phương pháp Backtracking yêu cầu số bước sinh nhiều hơn đáng kể (50 vs 106). 
+*   Generate and Test thể hiện hiệu suất tốt nhất về thời gian trong lần chạy này.
+*   AC3 và Backtracking có vẻ kém hiệu quả về thời gian so với Generate and Test cho bài toán cụ thể này, với Backtracking chậm nhất.
+*   Số nút duyệt của AC3 là ít nhất và Generate and test là nhiều nhất.
 
-**Kết luận**: Dựa trên các kết quả cụ thể này, phương pháp "Backtracking" cho thấy hiệu suất tốt hơn trong việc sinh ra trạng thái bắt đầu phù hợp so với phương pháp "AC3", thể hiện qua thời gian thực thi nhanh hơn và số nút duyệt ít hơn trong hầu hết các trường hợp.
+**Quan trọng:** Cần kiểm tra lại code của các hàm AC3 và Backtracking tương ứng với kết quả này để hiểu chính xác chúng đang làm gì và cách các chỉ số được tính. Các kết quả này không phản ánh hiệu suất điển hình của AC3/Backtracking so với Generate and Test trên các CSP lớn, nơi Backtracking thường vượt trội hơn nhiều so với Generate and Test thuần túy. Có khả năng đây là kết quả của một bài toán CSP điền rất nhỏ hoặc một triển khai cụ thể có các đặc điểm riêng.
 
-Tuyệt vời, bạn muốn thêm một mục mới về **Thuật toán tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)** và trình bày thuật toán **Q-Learning** mà bạn đã triển khai.
-
-Dựa trên code Q-Learning bạn vừa cung cấp, tôi sẽ soạn mục 2.6 này, trình bày khái niệm cơ bản của Học tăng cường và chi tiết về triển khai Q-Learning của bạn.
-
----
+*   **Nhận xét về hiệu suất trong nhóm này:**
+    *   Backtracking là một phương pháp cơ bản để giải CSP. Hiệu quả phụ thuộc vào thứ tự gán biến, thứ tự thử giá trị và hiệu quả của hàm kiểm tra tính nhất quán.
+    *   Việc kết hợp AC3 có thể cải thiện hiệu suất của Backtracking bằng cách giảm không gian tìm kiếm sớm, đặc biệt hữu ích cho các CSP phức tạp với nhiều ràng buộc. Tuy nhiên, hiệu quả cụ thể phụ thuộc vào bản chất của các ràng buộc.
 
 ### 2.6. Các thuật toán Tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)
 
@@ -360,7 +379,7 @@ Học tăng cường, nơi một agent học cách hành động trong một mô
 *   **Thuật toán trong nhóm này được triển khai:**
 
     *   **Q-Learning:**
-        *   **Mô tả:** Q-Learning là một thuật toán học tăng cường không cần mô hình (model-free). Nó học một hàm giá trị hành động, gọi là Q-function (Q(s, a)), lưu trữ trong một bảng (Q-table). Q(s, a) ước tính tổng phần thưởng tương lai kỳ vọng khi thực hiện hành động `a` trong trạng thái `s` và sau đó đi theo chính sách tối ưu. Agent học Q-function thông qua thử và sai, cập nhật các giá trị trong Q-table dựa trên phần thưởng nhận được và giá trị Q ước tính của trạng thái tiếp theo.
+        *   **Mô tả:** Q-Learning là một thuật toán học tăng cường. Nó học một hàm giá trị hành động, gọi là Q-function (Q(s, a)), lưu trữ trong một bảng (Q-table). Q(s, a) ước tính tổng phần thưởng tương lai kỳ vọng khi thực hiện hành động `a` trong trạng thái `s` và sau đó đi theo chính sách tối ưu. Agent học Q-function thông qua thử và sai, cập nhật các giá trị trong Q-table dựa trên phần thưởng nhận được và giá trị Q ước tính của trạng thái tiếp theo.
 
         *   **Hình ảnh gif của thuật toán:**
         ![](Gif/QLearning.gif)
@@ -376,15 +395,25 @@ Học tăng cường, nơi một agent học cách hành động trong một mô
 
 ## 3. Kết luận
 
-Qua quá trình xây dựng dự án, em đã đạt được một số kết quả. Em đã hiểu hơn về các thuật toán tìm kiếm, có cái nhìn mới mẻ về bộ môn trí tuệ nhân tạo.
-Phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động.
-Trong dự án em đã phát triển một ứng dụng GUI đầy đủ chức năng bằng Tkinter, cho phép người dùng tương tác để chọn thuật toán, xem trạng thái ban đầu/đích/hiện tại và quan sát quá trình giải bài toán 8 ô chữ một cách sinh động. Triển khai tương đối thành công 6 nhóm thuật toán tìm kiếm, nhưng khả năng hoạt động vẫn chưa được tối ưu và còn thiếu sót.
-* Tìm kiếm Không có thông tin: BFS, DFS, UCS, IDS.
-* Tìm kiếm Có thông tin: A\*, Greedy Best-First, IDA*.
-* Tìm kiếm Cục bộ: Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
-* Tìm kiếm Trong môi trường phức tạp: Search with no observation, Search with partialy observation, And Or Search.
-* Tìm kiếm Có ràng buộc: Backtracking, AC3.
-* Tìm kiếm Học tăng cường: Q-Learning.
-Em đã trực tiếp quan sát hoạt động của các thuật toán, giúp hiểu hơn về lý thuyết và cách mà các thuật toán tìm kiếm.
-Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất (thời gian, nút duyệt, độ dài đường đi), qua đó thu thập được một cơ sở dữ liệu để dễ dàng có thể so sánh hiệu quả của các thuật toán.
-Thông qua dự án này, em không chỉ nâng cao kiến thức về trí tuệ nhân tạo, mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán, và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
+Qua quá trình xây dựng dự án, em đã đạt được một số kết quả đáng kể, giúp em hiểu sâu sắc hơn về các thuật toán tìm kiếm trong lĩnh vực trí tuệ nhân tạo.
+
+*   **Phát triển ứng dụng GUI trực quan:** Em đã xây dựng một ứng dụng GUI đầy đủ chức năng bằng Tkinter. Ứng dụng này cho phép người dùng tương tác để:
+    *   Chọn và chạy các thuật toán tìm kiếm.
+    *   Xem trực tiếp trạng thái ban đầu, trạng thái đích và trạng thái hiện tại của bài toán.
+    *   Quan sát quá trình giải câu đố 8 ô chữ một cách sinh động thông qua hoạt họa (animation).
+
+*   **Triển khai đa dạng các thuật toán:** Em đã triển khai thành công các thuật toán tìm kiếm thuộc 6 nhóm chính:
+    *   **Tìm kiếm Không có thông tin:** BFS, DFS, UCS, IDS.
+    *   **Tìm kiếm Có thông tin:** A\*, Greedy Best-First, IDA*.
+    *   **Tìm kiếm Cục bộ:** Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
+    *   **Tìm kiếm Trong môi trường phức tạp:** Search with no observation, Search with partially observation, AND/OR Search.
+    *   **Tìm kiếm Có ràng buộc:** Backtracking, AC3, Kiểm thử (Generate and test).
+    *   **Tìm kiếm Học tăng cường:** Q-Learning.
+
+*   **Trực tiếp quan sát và hiểu thuật toán:** Việc được trực tiếp quan sát từng bước hoạt động của các thuật toán trên giao diện đã giúp em củng cố lý thuyết và có cái nhìn trực quan hơn về cách mà mỗi thuật toán khám phá không gian tìm kiếm.
+
+*   **Thu thập và phân tích hiệu suất:** Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất quan trọng như Thời gian tìm được giải pháp, số nút đã duyệt và độ dài đường đi/kế hoạch. Cơ sở dữ liệu này cho phép em dễ dàng so sánh hiệu quả hoạt động của các thuật toán khác nhau trên cùng một bài toán.
+
+*   **Nâng cao kiến thức và kỹ năng:** Thông qua dự án, em không chỉ nâng cao kiến thức về các phương pháp tìm kiếm trong trí tuệ nhân tạo mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
+
+

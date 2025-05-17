@@ -10,23 +10,19 @@ import copy
 from functools import partial
 import math
 import sys
+import numpy as np
 
 # --- Core Logic ---
 ROWS, COLS = 3, 3
-#start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
+start_state_default = [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
+#start_state_default = [[0, 1, 2], [4, 5, 3], [7, 8, 6]]
 #start_state_default = [[0, 1, 2], [3, 4, 5], [7, 8, 6]]
 #start_state_default = [[1, 2, 3], [4, 5, 6], [0, 8, 7]]
-start_state_default = [[1, 2, 3], [4, 5, 6], [7, 0, 8]]
+#start_state_default = [[1, 2, 3], [4, 5, 6], [7, 0, 8]]
 goal_state_default = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 current_start_state = copy.deepcopy(start_state_default)
 current_goal_state = copy.deepcopy(goal_state_default)
 
-def find_zero(state):
-    """Finds the position (row, col) of the empty tile (0)."""
-    for i, row in enumerate(state):
-        if 0 in row:
-            return i, row.index(0)
-    return None
 
 def get_neighbors(state):
     """Returns a list of (neighbor_state, cost) for the given state (list[list[int]]). Used in state space search."""
@@ -978,221 +974,270 @@ def genetic_algorithm(start_state, goal_state, population_size=200, max_generati
     print(f"GA: Max generations reached. Best fitness: {best_overall_fitness:.4f}")
     return best_overall_sim_path, time_taken, total_evaluations
 
-# --- Backtracking Logic ---
+def is_consistent(state, row, col, value):
+        """Checks if placing `value` at (row, col) is consistent with constraints."""
+        if value != 0:
+            if value in state:
+                return False
+            if col > 0 and state[row, col - 1] != 0 and value != state[row, col - 1] + 1:
+                return False
+            if row > 0 and state[row - 1, col] != 0 and value != state[row - 1, col] + 3:
+                return False
+        return True
 
-def backtracking(algorithm, goal_state, verbose=True, max_attempts=1000):
+def backtracking_csp_solve(start_state, goal_state):
+    """Solves the 8-puzzle problem using CSP with backtracking."""
+    np.random.seed(42)
 
-    ROWS, COLS = 3, 3
+    def is_complete(state):
+        """Checks if the state is complete (all cells filled except one)."""
+        return np.count_nonzero(state) == 8
 
-    def is_valid_state(state):
-        """Kiểm tra xem trạng thái có hợp lệ không (chứa đủ các số từ 0 đến 8)."""
-        values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
-        return values == set(range(ROWS * COLS))
+    def find_unassigned(state):
+        """Finds the first unassigned cell (value 0)."""
+        for r in range(ROWS):
+            for c in range(COLS):
+                if state[r, c] == 0:
+                    return r, c
+        return None, None
 
-    def is_compatible_with_algorithm(state, algorithm):
-        """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
-        local_search_algorithms = ["SimpleHC", "SteepestHC", "StochasticHC", "SA", "GA", "Beam"]
-        belief_space_algorithms = ["BFS_Belief"]
-        if algorithm in local_search_algorithms or algorithm == "AOSeach":
-            return is_solvable(state, goal_state) and state != goal_state
-        if algorithm in belief_space_algorithms:
-            belief_set = generate_initial_belief_set(state, goal_state, use_start_state=True)
-            return state in belief_set or is_solvable(state, goal_state)
-        return is_solvable(state, goal_state)
+    def recursive_backtracking(state, all_states):
+        """Recursive backtracking function."""
+        if is_complete(state):
+            all_states.append(state.copy().tolist())  # Convert to list for compatibility
+            return True
 
-    def backtrack(state, used, i=0, j=0, depth=0, attempts=0):
-        """Hàm đệ quy để tìm trạng thái hợp lệ phù hợp với thuật toán."""
-        if attempts >= max_attempts:
-            if verbose:
-                print(f"Reached max attempts ({max_attempts}).")
-            return None
+        row, col = find_unassigned(state)
+        if row is None:
+            return False
 
-        if i == ROWS:  # Đã điền đầy đủ ma trận
-            if verbose:
-                print(f"Checking state at depth {depth}:")
-                for row in state:
-                    print(row)
-            if is_valid_state(state) and is_compatible_with_algorithm(state, algorithm):
-                algo_map = {
-                    "DFS": dfs,
-                    "BFS": bfs,
-                    "UCS": ucs,
-                    "A*": a_star,
-                    "Greedy": greedy_best_first,
-                    "IDS": ids,
-                    "IDA*": ida_star,
-                    "SimpleHC": simple_hill_climbing,
-                    "SteepestHC": steepest_ascent_hill_climbing,
-                    "StochasticHC": stochastic_hill_climbing,
-                    "SA": simulated_annealing,
-                    "Beam": partial(beam_search, beam_width=5),
-                    "AOSeach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
-                    "GA": genetic_algorithm,
-                    "SenSorless": bfs_belief_search,
-                    "Q-Learning": q_learning
-                }
-                if algorithm in algo_map:
-                    path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
-                    if path and path[-1] == goal_state:  # Ensure goal is reached
-                        if verbose:
-                            print("Found a valid state compatible with the algorithm:")
-                            for row in state:
-                                print(row)
-                        return state
-                else:
-                    if verbose:
-                        print(f"Algorithm {algorithm} not supported for validation.")
-            if verbose:
-                print("State not compatible or algorithm failed, backtracking...\n")
-            return None
+        values = list(range(1, 9))  # Possible values (1-8)
+        np.random.shuffle(values)  # Shuffle the order of values to observe backtracking
+        for value in values:
+            if is_consistent(state, row, col, value):
+                state[row, col] = value
+                all_states.append(state.copy().tolist())  # Save intermediate state as list
 
-        # Di chuyển đến ô tiếp theo
-        ni, nj = (i, j + 1) if j < COLS - 1 else (i + 1, 0)
+                if recursive_backtracking(state, all_states):
+                    return True
 
-        # Thử các giá trị từ 0 đến 8
-        for num in range(ROWS * COLS):
-            if num not in used:
-                state[i][j] = num
-                used.add(num)
-                result = backtrack(state, used, ni, nj, depth + 1, attempts + 1)
-                if result:
-                    return result
-                used.remove(num)
-                state[i][j] = 0  # Quay lui
+                state[row, col] = 0  # Backtrack
+                all_states.append(state.copy().tolist())  # Save state after backtracking
 
-        return None
+        return False
 
-    # Kiểm tra trạng thái đích hợp lệ
-    if not is_valid_state(goal_state):
-        if verbose:
-            print("Error: Goal state is invalid. It must contain all numbers from 0 to 8 exactly once.")
-        return None
+    all_states = []
+    initial_state = np.zeros((ROWS, COLS), dtype=int)
+    recursive_backtracking(initial_state, all_states)
+    return all_states, len(all_states), len(all_states)
 
-    # Bắt đầu từ trạng thái rỗng
-    initial_state = [[0] * COLS for _ in range(ROWS)]
-    result = backtrack(initial_state, set(), attempts=0)
-    if result is None and verbose:
-        print(f"Backtracking failed: Could not find a valid start state for algorithm {algorithm}.")
-    return result
+def ac3_csp_solve(start_state, goal_state):
+    """AC3 algorithm to solve the 8-puzzle problem using CSP."""
 
-#--- AC3 Algorithm ---
-def ac3(algorithm, goal_state, verbose=True, max_attempts=1000):
-
-    ROWS, COLS = 3, 3
-
-    def is_valid_state(state):
-        """Kiểm tra xem trạng thái có hợp lệ không (chứa đủ các số từ 0 đến 8 đúng một lần)."""
-        values = {state[i][j] for i in range(ROWS) for j in range(COLS)}
-        return values == set(range(ROWS * COLS))
-
-    def is_compatible_with_algorithm(state, algorithm):
-        """Kiểm tra xem trạng thái có phù hợp với thuật toán cụ thể không."""
-        local_search_algorithms = ["SimpleHC", "SteepestHC", "StochasticHC", "SA", "GA", "Beam"]
-        belief_space_algorithms = ["Sensorless", "POsearch"]
-        if algorithm in local_search_algorithms or algorithm == "AOSerach":
-            return is_solvable(state, goal_state) and state != goal_state
-        if algorithm in belief_space_algorithms:
-            belief_set = generate_initial_belief_set(state_to_tuple(state))
-            return state in belief_set or is_solvable(state, goal_state)
-        return is_solvable(state, goal_state)
-
-    def revise(domains, var1, var2):
-        """Kiểm tra và loại bỏ các giá trị không nhất quán từ miền của var1 dựa trên ràng buộc với var2."""
+    def revise(state, domains, xi, xj):
+        """Revises the domain of xi to ensure consistency with xj."""
         revised = False
-        new_domain = domains[var1].copy()
-        for x in domains[var1]:
-            # Ràng buộc: var1 và var2 phải có giá trị khác nhau
-            if all(x == y for y in domains[var2]):
-                new_domain.remove(x)
+        for x in domains[xi][:]:
+            if not any(is_consistent(state, *xi, x) for x in domains[xj]):
+                domains[xi].remove(x)
                 revised = True
-        domains[var1] = new_domain
         return revised
 
-    # Khởi tạo miền giá trị: mỗi ô có thể nhận giá trị từ 0 đến 8
-    domains = {i: list(range(9)) for i in range(9)}  # 9 ô, đánh số từ 0 đến 8
-    arcs = deque([(i, j) for i in range(9) for j in range(9) if i != j])  # Tất cả các cặp ô khác nhau
+    def ac3(state, domains, arcs):
+        """AC3 algorithm to enforce arc consistency."""
+        while arcs:
+            xi, xj = arcs.popleft()
+            if revise(state, domains, xi, xj):
+                if not domains[xi]:
+                    return False
+                for xk in [(r, c) for r in range(ROWS) for c in range(COLS) if (r, c) != xi and (r, c) != xj]:
+                    arcs.append((xk, xi))
+        return True
 
-    # Chạy AC3 để đảm bảo tính nhất quán cung
-    while arcs:
-        var1, var2 = arcs.popleft()
-        if revise(domains, var1, var2):
-            if not domains[var1]:
-                if verbose:
-                    print("AC3: Miền rỗng, không tìm được trạng thái hợp lệ.")
-                return None
-            # Thêm các cung liên quan đến var1 vào lại hàng đợi
-            for var3 in range(9):
-                if var3 != var1 and var3 != var2:
-                    arcs.append((var3, var1))
+    def backtrack(state, domains, all_states):
+        """Backtracking search to find a solution after enforcing arc consistency."""
+        def is_complete(state):
+            """Checks if the state is complete (all cells filled except one)."""
+            return np.count_nonzero(state) == 8
 
-    # Sau khi AC3 hoàn tất, chọn giá trị từ các miền để tạo trạng thái
+        def find_unassigned(state):
+            """Finds the first unassigned cell (value 0)."""
+            for r in range(ROWS):
+                for c in range(COLS):
+                    if state[r, c] == 0:
+                        return r, c
+            return None, None
+
+        if is_complete(state):
+            all_states.append(state.copy().tolist())  # Convert to list for compatibility
+            return True
+
+        row, col = find_unassigned(state)
+        if row is None:
+            return False
+
+        values = domains[(row, col)]  # Use the domain values for the current cell
+        for value in values:
+            if is_consistent(state, row, col, value):
+                state[row, col] = value
+                all_states.append(state.copy().tolist())  # Save intermediate state as list
+
+                if backtrack(state, domains, all_states):
+                    return True
+
+                state[row, col] = 0  # Backtrack
+                all_states.append(state.copy().tolist())  # Save state after backtracking
+
+        return False
+
+    # Initialize domains and arcs
+    domains = {(r, c): list(range(1, 9)) for r in range(ROWS) for c in range(COLS)}
+    arcs = deque([(xi, xj) for xi in domains for xj in domains if xi != xj])
+
+    # Initialize state and all_states
+    initial_state = np.zeros((ROWS, COLS), dtype=int)
+    all_states = []
+
+    # Run AC3 to enforce arc consistency
+    if ac3(initial_state, domains, arcs):
+        # Use backtracking to find a solution
+        backtrack(initial_state, domains, all_states)
+
+    return all_states, len(all_states), len(all_states)
+
+def generate_and_test(start_state, goal_state, max_attempts=100000, max_states_to_store=500):
+    """Generate and Test algorithm with CSP constraints."""
+    print("Running Generate and Test with CSP constraints (showing all states)...")
+    ROWS, COLS = 3, 3
     attempts = 0
-    while attempts < max_attempts:
-        attempts += 1
-        state = [[0] * COLS for _ in range(ROWS)]
-        used_values = set()
-        valid = True
+    start_time = time.time()
+    all_states = []  # Store all generated states (valid and invalid)
 
-        # Gán giá trị ngẫu nhiên từ miền còn lại
-        for i in range(9):
-            row, col = divmod(i, 3)
-            available_values = [v for v in domains[i] if v not in used_values]
-            if not available_values:
-                valid = False
-                break
-            value = random.choice(available_values)
-            state[row][col] = value
-            used_values.add(value)
+    def is_consistent(state, row, col, value):
+        """Checks CSP constraints: uniqueness, +1 horizontal, +3 vertical."""
+        if value != 0:
+            # Check uniqueness, excluding the current cell
+            flat_state = [state[r][c] for r in range(ROWS) for c in range(COLS) if (r, c) != (row, col)]
+            if value in flat_state:
+                return False
+            if col > 0 and state[row][col - 1] != 0 and value != state[row][col - 1] + 1:
+                return False
+            if row > 0 and state[row - 1][col] != 0 and value != state[row - 1][col] + 3:
+                return False
+        return True
 
-        if valid and is_valid_state(state):
-            if verbose:
-                print(f"Checking state at attempt {attempts}:")
-                for row in state:
-                    print(row)
-            if is_compatible_with_algorithm(state, algorithm):
-                # Kiểm tra bằng cách chạy thuật toán
-                algo_map = {
-                    "DFS": dfs,
-                    "BFS": bfs,
-                    "UCS": ucs,
-                    "A*": a_star,
-                    "Greedy": greedy_best_first,
-                    "IDS": ids,
-                    "IDA*": ida_star,
-                    "SimpleHC": simple_hill_climbing,
-                    "SteepestHC": steepest_ascent_hill_climbing,
-                    "StochasticHC": stochastic_hill_climbing,
-                    "SA": simulated_annealing,
-                    "Beam": partial(beam_search, beam_width=5),
-                    "AOSerach": partial(and_or_search, get_successors=get_successors, max_depth=30, max_nodes=5000),
-                    "GA": genetic_algorithm,
-                    "Sensorless": bfs_belief_search,
-                    "POsearch": bfs_partially_observable_search,
-                    "Q-Learning": q_learning
-                }
-                if algorithm in algo_map:
-                    path, _, _ = algo_map[algorithm](copy.deepcopy(state), copy.deepcopy(goal_state))
-                    if path and path[-1] == goal_state:
-                        if verbose:
-                            print("Found a valid state compatible with the algorithm:")
-                            for row in state:
-                                print(row)
-                        return state
+    def is_solvable(state):
+        """Check if the state is solvable (based on inversion count)."""
+        flat = [val for row in state for val in row]
+        inversions = sum(1 for i in range(len(flat)) for j in range(i + 1, len(flat))
+                         if flat[i] != 0 and flat[j] != 0 and flat[i] > flat[j])
+        return inversions % 2 == 0
+
+    def is_valid_goal(state):
+        """Check if goal_state satisfies the constraints."""
+        for r in range(ROWS):
+            for c in range(COLS):
+                if state[r][c] != 0:
+                    if c > 0 and state[r][c-1] != 0 and state[r][c] != state[r][c-1] + 1:
+                        return False
+                    if r > 0 and state[r-1][c] != 0 and state[r][c] != state[r-1][c] + 3:
+                        return False
+        return True
+
+    def is_complete_state(state):
+        """Check if the state contains exactly one of each number from 0 to 8."""
+        flat_state = [val for row in state for val in row]
+        return sorted(flat_state) == list(range(9))
+
+    def heuristic_value(value, row, col, goal_state, state):
+        """Heuristic to prioritize values matching goal_state."""
+        score = 0
+        if row < len(goal_state) and col < len(goal_state[0]):
+            score += 0 if value == goal_state[row][col] else 1
+        return score
+
+    def fill_state(state, used_numbers, cell_index, temp_states):
+        """Randomized backtracking to fill the state, storing all states."""
+        nonlocal attempts
+        if attempts >= max_attempts:
+            print(f"Debug: Reached max attempts ({max_attempts})")
+            return False
+
+        if cell_index == ROWS * COLS:
+            if is_complete_state(state):
+                if len(all_states) < max_states_to_store:
+                    all_states.append([row[:] for row in state])
+                if [row[:] for row in state] == goal_state:
+                    if len(all_states) < max_states_to_store or all_states[-1] != state:
+                        all_states.append([row[:] for row in state])
+                    print(f"Debug: Goal state found: {state} after {attempts} attempts")
+                    return True
                 else:
-                    if verbose:
-                        print(f"Algorithm {algorithm} not supported for validation.")
-            if verbose:
-                print("State not compatible or algorithm failed, trying another state...\n")
+                    print(f"Debug: Complete state (not goal): {state}")
+            return False
 
-    if verbose:
-        print(f"AC3 failed: Could not find a valid start state after {max_attempts} attempts.")
-    return None
+        row, col = divmod(cell_index, COLS)
+        values = [num for num in range(9) if num not in used_numbers]
+        values.sort(key=lambda v: heuristic_value(v, row, col, goal_state, state))
+        random.shuffle(values)  # Shuffle all values
 
-def q_learning(start_state, goal_state, episodes=10000, alpha=0.1, gamma=0.95, epsilon=1.0, 
+        for num in values:
+            print(f"Debug: Trying value {num} at position ({row}, {col})")
+            state[row][col] = num
+            used_numbers.add(num)
+            if len(all_states) < max_states_to_store:
+                all_states.append([row[:] for row in state])
+            attempts += 1
+
+            if is_consistent(state, row, col, num):
+                temp_states.append([row[:] for row in state])
+                if fill_state(state, used_numbers, cell_index + 1, temp_states):
+                    return True
+                temp_states.pop()
+            else:
+                print(f"Debug: Value {num} at ({row}, {col}) failed consistency check")
+
+            state[row][col] = 0
+            used_numbers.remove(num)
+            if len(all_states) < max_states_to_store:
+                all_states.append([row[:] for row in state])
+
+        return False
+
+    # Validate inputs
+    start_state = np.array(start_state).tolist() if isinstance(start_state, np.ndarray) else start_state
+    goal_state = np.array(goal_state).tolist() if isinstance(goal_state, np.ndarray) else goal_state
+    if not (isinstance(start_state, list) and isinstance(goal_state, list) and
+            len(start_state) == ROWS and len(goal_state) == ROWS and
+            all(len(row) == COLS for row in start_state + goal_state)):
+        print(f"Invalid input: Expected {ROWS}x{COLS} matrices")
+        return [], 0, 0
+
+    # Check if goal_state is valid and solvable
+    if not is_valid_goal(goal_state):
+        print("Invalid goal_state: Does not satisfy +1 horizontal or +3 vertical constraints")
+        return [], 0, 0
+    if not is_solvable(goal_state):
+        print("Invalid goal_state: Unsolvable based on inversion count")
+        return [], 0, 0
+
+    # Initialize state and variables
+    initial_state = [[0] * COLS for _ in range(ROWS)]
+    used_numbers = set()
+    temp_states = []
+
+    # Run randomized backtracking
+    found = fill_state(initial_state, used_numbers, 0, temp_states)
+    if not found and temp_states:
+        if len(all_states) < max_states_to_store:
+            all_states.extend(temp_states)
+
+    print(f"Random Generate and Test: {'Goal state found' if found else 'Failed to find goal state'} after {attempts} attempts.")
+    return all_states, time.time() - start_time, attempts
+
+def q_learning(start_state, goal_state, episodes=20000, alpha=0.1, gamma=0.95, epsilon=1.0, 
                epsilon_decay=0.999, min_epsilon=0.05, max_steps_per_episode=10000):
-    
     """Q-Learning for solving the 8-puzzle with improved exploration and reward structure."""
-    
     print("Running Q-Learning...")
     q_table = {}  # Q-table: {(state, action): Q-value}
     start_time = time.time()
@@ -1234,6 +1279,7 @@ def q_learning(start_state, goal_state, episodes=10000, alpha=0.1, gamma=0.95, e
         steps = 0
         visited_in_episode = set()  # Track states to detect cycles
         prev_h = heuristic(current_state, goal_state)
+        total_reward = 0  # Track total reward for the episode
 
         if episode % 500 == 0:
             print(f"Episode {episode}/{episodes}, Q-table size: {len(q_table)}, Epsilon: {epsilon:.3f}")
@@ -1246,6 +1292,7 @@ def q_learning(start_state, goal_state, episodes=10000, alpha=0.1, gamma=0.95, e
             next_state = apply_action(current_state, action)
 
             reward = calculate_reward(current_state, next_state, prev_h)
+            total_reward += reward  # Accumulate reward for the episode
 
             if next_state is None:
                 next_state = current_state  # Stay in place for invalid moves
@@ -1266,6 +1313,8 @@ def q_learning(start_state, goal_state, episodes=10000, alpha=0.1, gamma=0.95, e
                 break
 
         epsilon = max(min_epsilon, epsilon * epsilon_decay)
+        # Print total reward for the episode
+        print(f"Episode {episode}: Total Reward = {total_reward:.2f}")
         states_visited += len(visited_in_episode)
 
     # Extract the best path
@@ -1354,7 +1403,7 @@ class PuzzleGUI:
         button_labels = ["DFS", "BFS", "UCS", "A*", "Greedy", "IDS", "IDA*",
                         "SimpleHC", "SteepestHC", "StochasticHC", "SA", "Beam", "AOSerach",
                         "Sensorless", "POsearch",  
-                        "GA", "Backtracking", "AC3", "Q-Learning"]
+                        "GA", "Backtracking", "AC3", "G&T", "Q-Learning"]
         beam_width_default = 5
 
         algo_map = {
@@ -1374,8 +1423,9 @@ class PuzzleGUI:
             "Sensorless": bfs_belief_search,
             "POsearch": bfs_partially_observable_search,
             "GA": genetic_algorithm,
-            "Backtracking": backtracking,
-            "AC3": ac3,
+            "Backtracking": backtracking_csp_solve,
+            "AC3": ac3_csp_solve,
+            "G&T": generate_and_test,
             "Q-Learning": q_learning
         }
 
@@ -1525,14 +1575,6 @@ class PuzzleGUI:
         self.speed_slider.config(state=state)
 
     def run_algorithm_thread(self, algorithm_func, algo_name):
-        if algo_name == "Backtracking":
-            self.show_backtracking_algorithm_selection(algorithm_func, algo_name)
-            return
-        
-        elif algo_name == "AC3":
-            self.show_ac3_algorithm_selection(algorithm_func, algo_name)
-            return
-
         if self.animation_running:
             messagebox.showwarning("Busy", "An animation or algorithm is already running.")
             return
@@ -1546,249 +1588,10 @@ class PuzzleGUI:
         self.update_grid(self.current_canvas, current_start_state, self.CURRENT_TILE_COLOR)
         self.master.update()
 
-        # Use default start and goal states if not using Backtracking
-        start_state = copy.deepcopy(start_state_default)
-        goal_state = copy.deepcopy(goal_state_default)
-
         def target():
             start_time = time.time()
             try:
-                result = algorithm_func(start_state, goal_state)
-                self.master.after(0, self._handle_algorithm_result, result, algo_name, time.time() - start_time)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                self.master.after(0, self._handle_algorithm_error, algo_name, e, time.time() - start_time)
-
-        self.animation_thread = threading.Thread(target=target, daemon=True)
-        self.animation_thread.start()
-
-    def show_backtracking_algorithm_selection(self, algorithm_func, algo_name):
-        """Show a dropdown to select an algorithm for Backtracking."""
-        def start_backtracking_with_selected_algorithm():
-            selected_algo_name = algo_var.get()
-            if selected_algo_name:
-                selection_window.destroy()  # Close the selection window
-
-                # Start backtracking to find a valid start state
-                self.update_detail_box(status="Finding Start State using Backtracking...")
-                self.master.update()
-
-                try:
-                    valid_start_state = backtracking(selected_algo_name, current_goal_state)
-                    if valid_start_state is None:
-                        messagebox.showerror("Error", "Failed to find a valid Start State.")
-                        self.update_detail_box(status="Failed to find Start State")
-                        return
-
-                    # Update Start State on GUI
-                    global current_start_state
-                    current_start_state = valid_start_state
-                    self.update_grid(self.initial_canvas, current_start_state, self.START_END_TILE_COLOR)
-                    self.update_detail_box(status="Start State Found. Running Algorithm...")
-                    self.master.update()
-
-                    # Run the selected algorithm with the new Start State
-                    self.set_buttons_state(tk.DISABLED)
-                    self.animation_running = True
-                    self.stop_animation_flag = False
-                    self.current_step_count.set(0)
-
-                    def target():
-                        start_time = time.time()
-                        try:
-                            algo_func = algo_map[selected_algo_name]
-                            result = algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
-                            self.master.after(0, self._handle_algorithm_result, result, f"{algo_name} ({selected_algo_name})", time.time() - start_time)
-                        except Exception as e:
-                            import traceback
-                            traceback.print_exc()
-                            self.master.after(0, self._handle_algorithm_error, f"{algo_name} ({selected_algo_name})", e, time.time() - start_time)
-
-                    self.animation_thread = threading.Thread(target=target, daemon=True)
-                    self.animation_thread.start()
-
-                except Exception as e:
-                    messagebox.showerror("Error", f"An error occurred during Backtracking:\n{str(e)}")
-                    self.update_detail_box(status="Error during Backtracking")
-
-        # Prevent multiple selection windows from opening
-        if hasattr(self, 'backtracking_selection_window') and self.backtracking_selection_window.winfo_exists():
-            self.backtracking_selection_window.lift()  # Bring the existing window to the front
-            return
-
-        algo_map = {
-            "DFS": dfs,
-            "BFS": bfs,
-            "UCS": ucs,
-            "A*": a_star,
-            "Greedy": greedy_best_first,
-            "IDS": ids,
-            "IDA*": ida_star,
-            "SimpleHC": simple_hill_climbing,
-            "SteepestHC": steepest_ascent_hill_climbing,
-            "StochasticHC": stochastic_hill_climbing,
-            "SA": simulated_annealing,
-            "Beam": partial(beam_search, beam_width=5),
-            "AOSeach": partial(and_or_search, get_successors=get_successors),
-            "Sensorless": bfs_belief_search,
-            "GA": genetic_algorithm,
-            "Q-Learning": q_learning
-        }
-
-        algo_var = tk.StringVar(value="DFS")
-        selection_window = tk.Toplevel(self.master)
-        self.backtracking_selection_window = selection_window  # Keep a reference to the window
-        selection_window.title("Select Algorithm for Backtracking")
-        selection_window.geometry("300x150")
-        selection_window.resizable(False, False)
-
-        tk.Label(selection_window, text="Select Algorithm:", font=self.button_font).pack(pady=10)
-        algo_dropdown = tk.OptionMenu(selection_window, algo_var, *algo_map.keys())
-        algo_dropdown.pack(pady=5)
-
-        tk.Button(selection_window, text="Start", font=self.button_font, bg="#32CD32", fg=self.BUTTON_FG_COLOR,
-                command=start_backtracking_with_selected_algorithm).pack(pady=10)
-        
-    def add_ac3_button(self):
-        # Tìm frame chứa các nút thuật toán
-        algo_frame = self.top_control_frame.winfo_children()[0]
-        button_container = algo_frame.winfo_children()[1]
-        
-        # Tạo frame mới nếu cần
-        max_buttons_per_row = 8
-        current_row_frame = button_container.winfo_children()[-1]
-        if len(current_row_frame.winfo_children()) >= max_buttons_per_row:
-            current_row_frame = tk.Frame(button_container, bg=self.BG_COLOR)
-            current_row_frame.pack(fill=tk.X, pady=1)
-
-        # Thêm nút AC3
-        color = self.BUTTON_COLORS[len(self.buttons) % len(self.BUTTON_COLORS)]
-        cmd = partial(self.run_algorithm_thread, ac3, "AC3")
-        button = tk.Button(current_row_frame, text="AC3", font=self.button_font,
-                           bg=color, fg=self.BUTTON_FG_COLOR, width=12, height=1,
-                           command=cmd, relief=tk.RAISED, borderwidth=2)
-        button.pack(side=tk.LEFT, padx=2, pady=1)
-        self.buttons.append(button)
-
-    def show_ac3_algorithm_selection(self, algorithm_func, algo_name):
-        """Hiển thị dropdown để chọn thuật toán mục tiêu cho AC3."""
-        def start_ac3_with_selected_algorithm():
-            selected_algo_name = algo_var.get()
-            if selected_algo_name:
-                selection_window.destroy()
-
-                # Chạy AC3 để tìm trạng thái ban đầu
-                self.update_detail_box(status="Finding Start State using AC3...")
-                self.master.update()
-
-                try:
-                    valid_start_state = ac3(selected_algo_name, current_goal_state)
-                    if valid_start_state is None:
-                        messagebox.showerror("Error", "Failed to find a valid Start State.")
-                        self.update_detail_box(status="Failed to find Start State")
-                        return
-
-                    # Cập nhật Start State trên GUI
-                    global current_start_state
-                    current_start_state = valid_start_state
-                    self.update_grid(self.initial_canvas, current_start_state, self.START_END_TILE_COLOR)
-                    self.update_detail_box(status="Start State Found. Running Algorithm...")
-                    self.master.update()
-
-                    # Chạy thuật toán được chọn với trạng thái ban đầu mới
-                    self.set_buttons_state(tk.DISABLED)
-                    self.animation_running = True
-                    self.stop_animation_flag = False
-                    self.current_step_count.set(0)
-
-                    def target():
-                        start_time = time.time()
-                        try:
-                            algo_func = algo_map[selected_algo_name]
-                            result = algo_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
-                            self.master.after(0, self._handle_algorithm_result, result, f"{algo_name} ({selected_algo_name})", time.time() - start_time)
-                        except Exception as e:
-                            import traceback
-                            traceback.print_exc()
-                            self.master.after(0, self._handle_algorithm_error, f"{algo_name} ({selected_algo_name})", e, time.time() - start_time)
-
-                    self.animation_thread = threading.Thread(target=target, daemon=True)
-                    self.animation_thread.start()
-
-                except Exception as e:
-                    messagebox.showerror("Error", f"An error occurred during AC3:\n{str(e)}")
-                    self.update_detail_box(status="Error during AC3")
-
-        # Ngăn mở nhiều cửa sổ chọn thuật toán
-        if hasattr(self, 'ac3_selection_window') and self.ac3_selection_window.winfo_exists():
-            self.ac3_selection_window.lift()
-            return
-
-        algo_map = {
-            "DFS": dfs,
-            "BFS": bfs,
-            "UCS": ucs,
-            "A*": a_star,
-            "Greedy": greedy_best_first,
-            "IDS": ids,
-            "IDA*": ida_star,
-            "SimpleHC": simple_hill_climbing,
-            "SteepestHC": steepest_ascent_hill_climbing,
-            "StochasticHC": stochastic_hill_climbing,
-            "SA": simulated_annealing,
-            "Beam": partial(beam_search, beam_width=5),
-            "AOSerach": partial(and_or_search, get_successors=get_successors),
-            "Sensorless": bfs_belief_search,
-            "POsearch": bfs_partially_observable_search,
-            "GA": genetic_algorithm,
-            "Q-Learning": q_learning
-        }
-
-        algo_var = tk.StringVar(value="DFS")
-        selection_window = tk.Toplevel(self.master)
-        self.ac3_selection_window = selection_window
-        selection_window.title("Select Algorithm for AC3")
-        selection_window.geometry("300x150")
-        selection_window.resizable(False, False)
-
-        tk.Label(selection_window, text="Select Algorithm:", font=self.button_font).pack(pady=10)
-        algo_dropdown = tk.OptionMenu(selection_window, algo_var, *algo_map.keys())
-        algo_dropdown.pack(pady=5)
-
-        tk.Button(selection_window, text="Start", font=self.button_font, bg="#32CD32", fg=self.BUTTON_FG_COLOR,
-                  command=start_ac3_with_selected_algorithm).pack(pady=10)
-
-    def run_algorithm_thread(self, algorithm_func, algo_name):
-        if algo_name == "Backtracking":
-            self.show_backtracking_algorithm_selection(algorithm_func, algo_name)
-            return
-        
-        elif algo_name == "AC3":
-            self.show_ac3_algorithm_selection(algorithm_func, algo_name)
-            return
-
-        if self.animation_running:
-            messagebox.showwarning("Busy", "An animation or algorithm is already running.")
-            return
-
-        self.set_buttons_state(tk.DISABLED)
-        self.animation_running = True
-        self.stop_animation_flag = False
-
-        self.current_step_count.set(0)
-        self.update_detail_box(status=f"Running {algo_name}... Please wait.", steps="-", time_val="-", count_val="-")
-        self.update_grid(self.current_canvas, current_start_state, self.CURRENT_TILE_COLOR)
-        self.master.update()
-
-        # Use default start and goal states if not using Backtracking
-        start_state = copy.deepcopy(start_state_default)
-        goal_state = copy.deepcopy(goal_state_default)
-
-        def target():
-            start_time = time.time()
-            try:
-                result = algorithm_func(start_state, goal_state)
+                result = algorithm_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
                 self.master.after(0, self._handle_algorithm_result, result, algo_name, time.time() - start_time)
             except Exception as e:
                 import traceback
