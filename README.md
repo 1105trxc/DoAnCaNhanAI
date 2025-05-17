@@ -269,7 +269,7 @@ Nhóm này bao gồm các thuật toán tìm kiếm hoạt động trong các tr
 
 #### 2.4.2. AND/OR Search (AOSerach)
 
-Đây là một thuật toán tìm kiếm thử nghiệm được triển khai dựa trên logic AND/OR như đã thảo luận, áp dụng trực tiếp lên **không gian trạng thái vật lý**.
+Đây là một thuật toán tìm kiếm được triển khai dựa trên logic AND/OR, áp dụng trực tiếp lên **không gian trạng thái vật lý**.
 
 *   **Mô tả logic:**
     *   Thuật toán duyệt qua không gian trạng thái bằng cách xen kẽ giữa các nút "OR" và nút "AND" theo độ sâu.
