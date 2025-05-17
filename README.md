@@ -314,6 +314,7 @@ Trong bài toán CSP, mục tiêu là tìm một gán giá trị cho một tập
     ![](Gif/AC3.gif)
 
     *   **Kiểm thử (Generate and Test):**  Thuật toán này hoạt động như một quy trình "Sinh và Kiểm tra", điền tăng dần (giống Backtracking Search) để xây dựng các cấu hình. Nếu điền xong và khớp với trạng thái đích, coi là tìm thấy lời giải. Ghi lại tất cả trạng thái trung gian trong quá trình điền/kiểm thử.
+
     ![](Gif/GT.gif)
 
 *   **Hình ảnh so sánh hiệu suất:**
@@ -356,12 +357,6 @@ Trong bài toán CSP, mục tiêu là tìm một gán giá trị cho một tập
 *   Generate and Test thể hiện hiệu suất tốt nhất về thời gian trong lần chạy này.
 *   AC3 và Backtracking có vẻ kém hiệu quả về thời gian so với Generate and Test cho bài toán cụ thể này, với Backtracking chậm nhất.
 *   Số nút duyệt của AC3 là ít nhất và Generate and test là nhiều nhất.
-
-**Quan trọng:** Cần kiểm tra lại code của các hàm AC3 và Backtracking tương ứng với kết quả này để hiểu chính xác chúng đang làm gì và cách các chỉ số được tính. Các kết quả này không phản ánh hiệu suất điển hình của AC3/Backtracking so với Generate and Test trên các CSP lớn, nơi Backtracking thường vượt trội hơn nhiều so với Generate and Test thuần túy. Có khả năng đây là kết quả của một bài toán CSP điền rất nhỏ hoặc một triển khai cụ thể có các đặc điểm riêng.
-
-*   **Nhận xét về hiệu suất trong nhóm này:**
-    *   Backtracking là một phương pháp cơ bản để giải CSP. Hiệu quả phụ thuộc vào thứ tự gán biến, thứ tự thử giá trị và hiệu quả của hàm kiểm tra tính nhất quán.
-    *   Việc kết hợp AC3 có thể cải thiện hiệu suất của Backtracking bằng cách giảm không gian tìm kiếm sớm, đặc biệt hữu ích cho các CSP phức tạp với nhiều ràng buộc. Tuy nhiên, hiệu quả cụ thể phụ thuộc vào bản chất của các ràng buộc.
 
 ### 2.6. Các thuật toán Tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)
 
