@@ -354,9 +354,17 @@ Trong bài toán CSP, mục tiêu là tìm một gán giá trị cho một tập
 
 **Nhận xét tổng hợp:**
 
+<<<<<<< HEAD
 *   Generate and Test thể hiện hiệu suất tốt nhất về thời gian trong lần chạy này.
 *   AC3 và Backtracking có vẻ kém hiệu quả về thời gian so với Generate and Test cho bài toán cụ thể này, với Backtracking chậm nhất.
 *   Số nút duyệt của AC3 là ít nhất và Generate and test là nhiều nhất.
+=======
+2.  **Về Số bước sinh (Path Steps):**
+    *   Trong hai trường hợp (với BeamSearch và BFS), phương pháp Backtracking tìm thấy trạng thái phù hợp với số bước sinh ít hơn (22 vs 25; 17 vs 22).
+    *   Chỉ với A*, phương pháp Backtracking yêu cầu số bước sinh nhiều hơn đáng kể (50 vs 106). 
+
+**Kết luận**: Dựa trên các kết quả cụ thể này, phương pháp "Backtracking" cho thấy hiệu suất tốt hơn trong việc sinh ra trạng thái bắt đầu phù hợp so với phương pháp "AC3", thể hiện qua thời gian thực thi nhanh hơn và số nút duyệt ít hơn trong hầu hết các trường hợp.
+>>>>>>> e0f736c3c4c35b609eed4acb9855968fc1784a90
 
 ### 2.6. Các thuật toán Tìm kiếm Học tăng cường (Reinforcement Learning Algorithms)
 
@@ -402,13 +410,25 @@ Qua quá trình xây dựng dự án, em đã đạt được một số kết q
     *   **Tìm kiếm Có thông tin:** A\*, Greedy Best-First, IDA*.
     *   **Tìm kiếm Cục bộ:** Simple Hill Climbing, Steepest Ascent Hill Climbing, Stochastic Hill Climbing, Simulated Annealing, Beam Search, Genetic Algorithm.
     *   **Tìm kiếm Trong môi trường phức tạp:** Search with no observation, Search with partially observation, AND/OR Search.
+<<<<<<< HEAD
     *   **Tìm kiếm Có ràng buộc:** Backtracking, AC3, Kiểm thử (Generate and test).
+=======
+    *   **Tìm kiếm Có ràng buộc:** Backtracking (dùng để sinh trạng thái), AC3 (dùng để sinh trạng thái).
+>>>>>>> e0f736c3c4c35b609eed4acb9855968fc1784a90
     *   **Tìm kiếm Học tăng cường:** Q-Learning.
 
 *   **Trực tiếp quan sát và hiểu thuật toán:** Việc được trực tiếp quan sát từng bước hoạt động của các thuật toán trên giao diện đã giúp em củng cố lý thuyết và có cái nhìn trực quan hơn về cách mà mỗi thuật toán khám phá không gian tìm kiếm.
 
+<<<<<<< HEAD
 *   **Thu thập và phân tích hiệu suất:** Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất quan trọng như Thời gian tìm được giải pháp, số nút đã duyệt và độ dài đường đi/kế hoạch. Cơ sở dữ liệu này cho phép em dễ dàng so sánh hiệu quả hoạt động của các thuật toán khác nhau trên cùng một bài toán.
 
 *   **Nâng cao kiến thức và kỹ năng:** Thông qua dự án, em không chỉ nâng cao kiến thức về các phương pháp tìm kiếm trong trí tuệ nhân tạo mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
 
+=======
+*   **Thu thập và phân tích hiệu suất:** Em đã triển khai hệ thống ghi lại các chỉ số hiệu suất quan trọng như thời gian thực thi, số nút đã duyệt và độ dài đường đi/kế hoạch. Cơ sở dữ liệu này cho phép em dễ dàng so sánh hiệu quả hoạt động của các thuật toán khác nhau trên cùng một bài toán.
+
+*   **Nâng cao kiến thức và kỹ năng:** Thông qua dự án, em không chỉ nâng cao kiến thức về các phương pháp tìm kiếm trong trí tuệ nhân tạo mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
+
+Mặc dù khả năng hoạt động của một số thuật toán thử nghiệm vẫn chưa được tối ưu và có thể còn thiếu sót so với các triển khai chuyên sâu, dự án này đã thành công trong việc cung cấp một công cụ học tập tương tác và một nền tảng để khám phá các chiến lược tìm kiếm AI.
+>>>>>>> e0f736c3c4c35b609eed4acb9855968fc1784a90
 
