@@ -410,6 +410,6 @@ Qua quá trình xây dựng dự án, em đã đạt được một số kết q
 
 *   **Nâng cao kiến thức và kỹ năng:** Thông qua dự án, em không chỉ nâng cao kiến thức về các phương pháp tìm kiếm trong trí tuệ nhân tạo mà còn rèn luyện được tư duy hệ thống, khả năng phân tích – đánh giá thuật toán và kỹ năng xây dựng phần mềm có tính ứng dụng thực tiễn.
 
-Mặc dù khả năng hoạt động của một số thuật toán thử nghiệm vẫn chưa được tối ưu và có thể còn thiếu sót so với các triển khai, dự án này đã thành công trong việc cung cấp một công cụ học tập và một nền tảng để hiểu sâu hơn về các tìm kiếm AI.
+Mặc dù khả năng hoạt động của một số thuật toán vẫn chưa được tối ưu và có thể còn thiếu sót so với các triển khai, dự án này đã thành công trong việc cung cấp một công cụ học tập và một nền tảng để hiểu sâu hơn về các tìm kiếm AI.
 
 
