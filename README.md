@@ -1,8 +1,134 @@
-# KHẢO SÁT HIỆN TRẠNG VÀ XÁC ĐỊNH YÊU CẦU
+# ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
+
+## Hệ thống Sàn Thương mại Điện tử Đa Nhà Cung Cấp — TKart E-commerce Platform
+
+| Thông tin | Chi tiết |
+|---|---|
+| Phiên bản tài liệu | 3.0 |
+| Ngày cập nhật | 27/04/2026 |
+| Tác giả | Nguyễn Thanh Tín |
+| Trạng thái | Hoàn thiện |
+
+---
+
+# PHẦN 1: GIỚI THIỆU
+
+## 1.1 Mục đích (Purpose)
+
+Tài liệu Đặc tả Yêu cầu Phần mềm (SRS) này được xây dựng nhằm mô tả đầy đủ và chi tiết các yêu cầu chức năng, yêu cầu phi chức năng, ràng buộc thiết kế và tiêu chí nghiệm thu cho hệ thống **TKart E-commerce Platform** — một sàn thương mại điện tử đa nhà cung cấp (Multi-vendor Marketplace).
+
+**Đối tượng đọc tài liệu:**
+
+| Vai trò | Mục đích sử dụng |
+|---|---|
+| Product Owner / Giảng viên | Thẩm định và phê duyệt yêu cầu |
+| Đội ngũ phát triển (Dev) | Cơ sở để thiết kế kiến trúc và lập trình |
+| Đội kiểm thử (QA/Tester) | Xây dựng Test Cases và nghiệm thu |
+| Nhà phân tích (BA/SA) | Đối chiếu thiết kế UML với yêu cầu |
+
+## 1.2 Phạm vi (Scope)
+
+**Tên hệ thống:** TKart E-commerce Platform
+
+**Mô tả:** Hệ thống sàn thương mại điện tử đa nhà cung cấp, cho phép nhiều Người bán (Seller) đăng ký gian hàng và bán hàng trên cùng một nền tảng. Khách hàng có thể mua sắm từ nhiều gian hàng, thanh toán gộp trong một giao dịch duy nhất.
+
+**Phạm vi hệ thống (In-scope):**
+
+| # | Phân hệ | Mô tả |
+|---|---|---|
+| 1 | Quản lý Tài khoản & Xác thực | Đăng ký OTP, Đăng nhập (Password/OTP/OAuth2/2FA), Phân quyền RBAC |
+| 2 | Sản phẩm & Danh mục | Danh mục 3 cấp, CRUD sản phẩm, biến thể (màu/size), kiểm duyệt |
+| 3 | Giỏ hàng & Wishlist | Quản lý giỏ hàng, danh sách yêu thích |
+| 4 | Đặt hàng & Thanh toán | Checkout, Split Order, Voucher Engine, Xu tích lũy, COD, VnPay/SePay |
+| 5 | Vận chuyển & Tracking | Tích hợp API GHTK/Grab, Webhook tự động, In vận đơn PDF |
+| 6 | Hoàn trả & Khiếu nại | Return Request, Dispute Resolution, Auto Refund API |
+| 7 | Chatbot AI & Chat Real-time | NLP intent analysis, WebSocket messaging |
+| 8 | Quản trị Nền tảng | Homepage config, Coupon/Deal, Kiểm duyệt Seller/Sản phẩm, Đối soát |
+| 9 | Báo cáo & Thống kê | Dashboard biểu đồ, Xuất Excel, Audit Log |
+
+**Ngoài phạm vi (Out-of-scope):**
+
+- Ứng dụng di động (Mobile App) — chỉ hỗ trợ Web responsive
+- Hệ thống kho vận nội bộ (Warehouse Management)
+- Chương trình tiếp thị liên kết (Affiliate Marketing)
+- Hệ thống quảng cáo trả phí (Paid Ads)
+
+## 1.3 Bảng thuật ngữ (Glossary)
+
+| Thuật ngữ | Viết tắt | Giải thích |
+|---|---|---|
+| Software Requirements Specification | SRS | Tài liệu đặc tả yêu cầu phần mềm |
+| Use Case | UC | Trường hợp sử dụng — mô tả tương tác giữa Actor và Hệ thống |
+| Business Rule | BR | Quy tắc nghiệp vụ ràng buộc hoạt động hệ thống |
+| Non-Functional Requirement | NFR | Yêu cầu phi chức năng (hiệu suất, bảo mật, khả dụng) |
+| Cash on Delivery | COD | Phương thức thanh toán khi nhận hàng |
+| JSON Web Token | JWT | Chuẩn mã hóa xác thực phiên làm việc |
+| One-Time Password | OTP | Mật khẩu dùng một lần gửi qua Email |
+| Role-Based Access Control | RBAC | Kiểm soát truy cập theo vai trò |
+| BCrypt | — | Thuật toán mã hóa mật khẩu một chiều |
+| OAuth 2.0 | OAuth2 | Giao thức xác thực ủy quyền qua bên thứ 3 (Google/Facebook) |
+| Split Order | — | Tách đơn hàng theo từng Seller khi Checkout |
+| Platform Fee | — | Phí nền tảng thu từ Seller trên mỗi giao dịch thành công |
+| Webhook | — | Cơ chế callback tự động từ hệ thống bên ngoài |
+| API | — | Application Programming Interface — Giao diện lập trình ứng dụng |
+| GHTK | — | Giao Hàng Tiết Kiệm — Đơn vị vận chuyển |
+| Cloudinary | — | Dịch vụ lưu trữ và quản lý hình ảnh/video đám mây |
+| VnPay / SePay / Momo | — | Cổng thanh toán trực tuyến nội địa |
+| WebSocket | — | Giao thức truyền dữ liệu hai chiều thời gian thực |
+| NLP | — | Natural Language Processing — Xử lý ngôn ngữ tự nhiên |
+| MRP | — | Maximum Retail Price — Giá niêm yết gốc |
+| Selling Price | — | Giá bán thực tế (sau giảm giá) |
+| Voucher Engine | — | Module tự động quét và áp dụng mã giảm giá tối ưu nhất |
+| Dispute | — | Tranh chấp giữa Khách hàng và Người bán cần Admin phán quyết |
+| Refund | — | Hoàn tiền tự động cho Khách hàng qua cổng thanh toán |
+| Audit Log | — | Nhật ký kiểm toán các thao tác thay đổi dữ liệu quan trọng |
+| WYSIWYG | — | What You See Is What You Get — Chỉnh sửa trực quan |
+
+## 1.4 Tài liệu tham chiếu
+
+| # | Tài liệu | Mô tả |
+|---|---|---|
+| 1 | IEEE Std 830-1998 | Chuẩn quốc tế về đặc tả yêu cầu phần mềm |
+| 2 | requirements_v3.md | Bản gốc đặc tả yêu cầu hệ thống E-commerce |
+| 3 | Sequence Diagrams (PlantUML) | 6 sơ đồ tuần tự cốt lõi trong `design/uml/sequence/` |
+| 4 | VnPay API Documentation | Tài liệu tích hợp cổng thanh toán VnPay |
+| 5 | GHTK API Documentation | Tài liệu tích hợp API vận chuyển GHTK |
+
+## 1.5 Tổng quan cấu trúc tài liệu
+
+Tài liệu SRS này được tổ chức thành 4 phần chính:
+
+- **Phần 1 – Giới thiệu:** Mục đích, phạm vi, thuật ngữ và tài liệu tham chiếu.
+- **Phần 2 – Khảo sát hiện trạng & Xác định yêu cầu:** Phân tích hiện trạng, yêu cầu chức năng nghiệp vụ, yêu cầu phi chức năng, quy trình tác nghiệp, và các ràng buộc.
+- **Phần 3 – Mô hình hóa yêu cầu:** Nhận diện Actor/Use Case, Đặc tả chi tiết 29 Use Cases.
+- **Phần 4 – Tiêu chí nghiệm thu:** Các điều kiện để hệ thống được chấp nhận bàn giao.
+
+---
+
+# PHẦN 2: KHẢO SÁT HIỆN TRẠNG VÀ XÁC ĐỊNH YÊU CẦU
 
 ## Phân tích hiện trạng
 
-Trong bối cảnh thương mại điện tử phát triển mạnh mẽ, việc xây dựng một nền tảng bán hàng không chỉ dừng lại ở mô hình một cửa hàng mà đang chuyển dịch sang mô hình sàn giao dịch thương mại điện tử đa nhà cung cấp. Hiện tại, người tiêu dùng cần một nền tảng tích hợp nơi họ có thể tìm kiếm, lọc, sắp xếp sản phẩm từ nhiều nhà bán hàng khác nhau, quản lý giỏ hàng mượt mà, thanh toán trực tuyến an toàn và tương tác qua Chatbot AI. Về phía người bán, họ thiếu một công cụ tập trung để đăng bán sản phẩm, theo dõi đơn hàng, cập nhật kho và thống kê doanh thu qua biểu đồ trực quan. Về phía quản trị viên, cần có một hệ thống toàn diện để kiểm duyệt người bán, quản lý mã giảm giá, các chương trình khuyến mãi và tùy biến giao diện trang chủ động. Việc xây dựng một hệ thống E-commerce đa nhà cung cấp là giải pháp hoàn chỉnh, tự động hóa quy trình giao dịch, quản lý tài chính thông qua tích hợp cổng thanh toán và nâng cao trải nghiệm người dùng
+Trong bối cảnh thương mại điện tử phát triển mạnh mẽ, việc xây dựng một nền tảng bán hàng không chỉ dừng lại ở mô hình một cửa hàng mà đang chuyển dịch sang mô hình **sàn giao dịch thương mại điện tử đa nhà cung cấp (Multi-vendor Marketplace)**.
+
+**Về phía Người tiêu dùng:** Cần một nền tảng tích hợp nơi họ có thể:
+- Tìm kiếm, lọc và sắp xếp sản phẩm từ nhiều nhà bán hàng khác nhau.
+- Quản lý giỏ hàng mượt mà, thanh toán trực tuyến an toàn (VnPay/SePay/Momo) hoặc COD.
+- Tương tác tự nhiên qua Chatbot AI để tra cứu nhanh thông tin sản phẩm và đơn hàng.
+- Yêu cầu trả hàng/hoàn tiền khi sản phẩm không đúng mô tả, với quy trình minh bạch.
+
+**Về phía Người bán (Seller):** Thiếu một công cụ tập trung để:
+- Đăng bán sản phẩm với biến thể (màu sắc, kích cỡ), tải ảnh qua Cloudinary.
+- Theo dõi và xử lý đơn hàng, tự động đẩy đơn vận chuyển qua API hãng vận chuyển (GHTK/Grab).
+- Thống kê doanh thu qua biểu đồ trực quan và kết xuất báo cáo Excel để đối soát.
+
+**Về phía Quản trị viên (Admin):** Cần có một hệ thống toàn diện để:
+- Kiểm duyệt tài khoản Người bán và sản phẩm trước khi cho phép hiển thị công khai.
+- Quản lý mã giảm giá (Coupon), các chương trình khuyến mãi (Deals) toàn sàn.
+- Tùy biến giao diện trang chủ động (Banner, lưới danh mục) mà không cần can thiệp mã nguồn.
+- Giải quyết khiếu nại (Dispute) giữa Khách hàng và Người bán với vai trò trọng tài.
+
+**Giải pháp đề xuất:** Xây dựng hệ thống **TKart E-commerce Platform** — một sàn thương mại điện tử đa nhà cung cấp hoàn chỉnh, tự động hóa quy trình giao dịch, quản lý tài chính thông qua tích hợp cổng thanh toán và nâng cao trải nghiệm người dùng.
 
 ## Phân tích yêu cầu
 
@@ -144,7 +270,34 @@ Trong bối cảnh thương mại điện tử phát triển mạnh mẽ, việc
 
 #### Yêu cầu chức năng hệ thống
 
-• Môi trường: Hệ thống được xây dựng trên nền tảng Web Application, hoạt động qua mạng Internet, hỗ trợ truy cập trên máy tính và thiết bị di động. Front-end phát triển bằng React, TypeScript, Tailwind CSS, MUI và Redux Toolkit. Back-end sử dụng Java Spring Boot, MySQL Database. Hệ thống tích hợp trực tiếp với Cloudinary để lưu trữ phương tiện và các cổng thanh toán VnPay, SePay hoặc Momo. • Phân quyền: Hệ thống phân chia người dùng thành 3 nhóm quyền chính bằng Spring Security và JSON Web Token (JWT): o Khách hàng (ROLE_CUSTOMER): Có quyền truy cập giao diện cửa hàng, tra cứu sản phẩm, tương tác Chatbot, quản lý giỏ hàng, theo dõi đơn hàng cá nhân, và để lại đánh giá. Bị chặn truy cập vào các API thuộc quyền quản lý. o Người bán (ROLE_SELLER): Được cấp quyền vào bảng điều khiển (Seller Dashboard). Quản lý không gian bán hàng, đăng sản phẩm, theo dõi và xử lý các đơn hàng thuộc quyền sở hữu của mình, xem thống kê dòng tiền. o Quản trị viên (ROLE_ADMIN): Nắm quyền cao nhất vào bảng điều khiển hệ thống (Admin Dashboard). Quản lý trạng thái mọi tài khoản Seller/Customer, thiết lập giao diện Home page, cấu hình Coupon/Deal toàn sàn. Bảng Yêu cầu Hệ thống STT Nội dung Mô tả chi tiết Ghi chú 1 Nền tảng hoạt động Ứng dụng Web nhiều lớp (Client- Server 3-tier) xây dựng với React và Spring Boot. Hệ thống hoạt động qua mạng Internet, cho phép truy cập thông qua trình duyệt web trên máy tính hoặc thiết bị di động. Đảm bảo tương thích Responsive tốt trên đa thiết bị nhờ Tailwind CSS và MUI. 2 Tích hợp bên thứ ba Tích hợp VNPay, một số tài khoản ngân hàng; Java Mail Sender gửi mã Yêu cầu API Keys bảo mật chặt chẽ. OTP; Cloudinary lưu trữ tài nguyên hình ảnh. 3 Bảo mật và Phân quyền Quản lý luồng truy cập qua JWT Token. Mật khẩu người dùng băm qua BCrypt. Phân định rõ 3 roles: Admin, Seller, Customer. Ngăn chặn truy cập chéo giữa các Roles.
+**Môi trường hoạt động:**
+
+| STT | Hạng mục | Mô tả chi tiết |
+|---|---|---|
+| 1 | Nền tảng | Ứng dụng Web nhiều lớp (Client-Server 3-tier), hoạt động qua mạng Internet. Hỗ trợ truy cập trên máy tính và thiết bị di động thông qua thiết kế Responsive. |
+| 2 | Front-end | React, TypeScript, Tailwind CSS, Material UI (MUI), Redux Toolkit. |
+| 3 | Back-end | Java Spring Boot (RESTful API), Spring Security, Spring Data JPA. |
+| 4 | Cơ sở dữ liệu | MySQL. |
+| 5 | Lưu trữ phương tiện | Cloudinary (hình ảnh sản phẩm, video minh chứng hoàn trả). |
+| 6 | Cổng thanh toán | VnPay, SePay hoặc Momo. |
+| 7 | Vận chuyển | API GHTK / Grab Express + Webhook tự động cập nhật trạng thái. |
+
+**Phân quyền hệ thống (Role-Based Access Control):**
+
+| Vai trò | Mã quyền | Phạm vi truy cập |
+|---|---|---|
+| Khách hàng | ROLE_CUSTOMER | Giao diện cửa hàng: tìm kiếm sản phẩm, giỏ hàng, Chatbot AI, đặt hàng, theo dõi đơn, đánh giá. Bị chặn truy cập API quản lý. |
+| Người bán | ROLE_SELLER | Seller Dashboard: quản lý sản phẩm, xử lý đơn hàng, thống kê doanh thu, chat với khách hàng. Chỉ truy cập dữ liệu thuộc gian hàng của mình. |
+| Quản trị viên | ROLE_ADMIN | Admin Dashboard: kiểm duyệt Seller/sản phẩm, cấu hình trang chủ, quản lý Coupon/Deal, giải quyết khiếu nại, đối soát doanh thu toàn sàn. |
+
+**Cơ chế bảo mật:**
+
+| STT | Cơ chế | Mô tả |
+|---|---|---|
+| 1 | Xác thực phiên | Quản lý bằng JSON Web Token (JWT) qua bộ lọc Spring Security. |
+| 2 | Mã hóa mật khẩu | Băm một chiều bằng thuật toán BCrypt trước khi lưu vào Database. |
+| 3 | Ngăn truy cập chéo | Phân định rõ 3 roles (Customer, Seller, Admin). API endpoint được bảo vệ theo role tương ứng. |
+| 4 | Bảo mật thanh toán | Thông tin thẻ tín dụng truyền trực tiếp qua API cổng thanh toán, không lưu trên DB hệ thống. |
 
 ### Yêu cầu phi chức năng
 
@@ -178,43 +331,125 @@ trị viên):
   - Hệ thống phải áp dụng cơ chế xác thực phiên làm việc chặt chẽ bằng chuẩn JSON Web Token (JWT) thông qua bộ lọc Spring Security,,.
   - Cần thiết lập kiểm soát truy cập dựa trên vai trò (Role-Based Access Control) để ngăn chặn tuyệt đối tình trạng truy cập chéo tài nguyên giữa 3 nhóm quyền biệt lập: Khách hàng (ROLE_CUSTOMER), Người bán (ROLE_SELLER) và Quản trị viên (ROLE_ADMIN),,. Thông tin nhạy cảm về thẻ tín dụng khi thanh toán phải được tuân thủ chuẩn bảo mật trực tiếp thông qua API của VnPay, SePay hoặc Momo.
 
+### Giao diện tích hợp bên thứ 3 (External System Interfaces)
+
+| # | Hệ thống bên ngoài | Mục đích tích hợp | Giao thức | Sử dụng tại |
+|---|---|---|---|---|
+| 1 | **VnPay / SePay / Momo** | Thanh toán trực tuyến & Hoàn tiền tự động (Refund API) | HTTPS REST API + Webhook callback | UC05, UC09, UC23 |
+| 2 | **GHTK / Grab Express** | Tạo đơn vận chuyển, lấy Tracking ID, nhận Webhook trạng thái giao hàng | HTTPS REST API + Webhook | UC16 |
+| 3 | **Cloudinary** | Lưu trữ, nén và phân phối hình ảnh/video sản phẩm, minh chứng hoàn trả | HTTPS Upload API + CDN | UC13, UC08, UC09 |
+| 4 | **Google / Facebook OAuth2** | Đăng nhập bằng mạng xã hội, lấy thông tin Email/Tên | OAuth 2.0 Authorization Code Flow | UC27 |
+| 5 | **Java Mail Sender (SMTP)** | Gửi mã OTP xác thực đăng ký/đăng nhập/quên mật khẩu | SMTP | UC02, UC27, UC29 |
+| 6 | **AI Server (NLP Engine)** | Phân tích ý định câu hỏi Chatbot, truy xuất dữ liệu theo ngữ cảnh | Internal REST API | UC07 |
+
+### Giả định và Ràng buộc (Assumptions & Constraints)
+
+**Giả định (Assumptions):**
+
+| # | Giả định |
+|---|---|
+| A1 | Người dùng cuối có kết nối Internet ổn định khi sử dụng hệ thống. |
+| A2 | Các cổng thanh toán (VnPay/SePay/Momo) và API vận chuyển (GHTK/Grab) luôn khả dụng trong giờ hoạt động kinh doanh. |
+| A3 | Người bán (Seller) cung cấp thông tin doanh nghiệp (GST, tài khoản ngân hàng) trung thực để đối soát. |
+| A4 | Hệ thống email SMTP hoạt động ổn định để gửi mã OTP trong vòng 5 giây. |
+| A5 | Cloudinary có đủ dung lượng lưu trữ cho hình ảnh/video sản phẩm và minh chứng hoàn trả. |
+
+**Ràng buộc (Constraints):**
+
+| # | Ràng buộc |
+|---|---|
+| C1 | **Kiến trúc:** Hệ thống bắt buộc sử dụng kiến trúc Client-Server 3-tier (React + Spring Boot + MySQL). |
+| C2 | **Bảo mật:** Mật khẩu mã hóa BCrypt, phiên làm việc quản lý bằng JWT, phân quyền RBAC qua Spring Security. |
+| C3 | **Thanh toán:** Thông tin thẻ tuyệt đối không lưu trên DB hệ thống — truyền 100% qua cổng thanh toán bên thứ 3. |
+| C4 | **Vận chuyển:** Mã vận đơn (Tracking ID) phải được sinh tự động từ API ĐVVC, Seller không được nhập tay (BR16-1). |
+| C5 | **Trình duyệt:** Hỗ trợ Chrome, Safari, Firefox, Edge phiên bản mới nhất. |
+| C6 | **Ngôn ngữ:** Giao diện hệ thống hỗ trợ Tiếng Việt. |
+
 ### Quy trình tác nghiệp
 
 #### Quy trình tham quan và chuyển đổi của Khách vãng lai
 
-Quy trình trải nghiệm và chuyển đổi của một Khách vãng lai trên sàn E-commerce diễn ra theo trình tự sau: Đầu tiên, Khách vãng lai truy cập vào nền tảng thông qua các trình duyệt web (có thể từ link chia sẻ, tìm kiếm Google hoặc trực tiếp URL). Hệ thống lập tức hiển thị Trang chủ (Homepage) với các Banner quảng cáo, các chương trình Khuyến mãi (Deals) đang diễn ra và các Danh mục nổi bật (Điện tử, Nội thất, Thời trang...) mà không yêu cầu đăng nhập. Tiếp theo, khách tự do điều hướng, sử dụng thanh tìm kiếm (Search) hoặc nhấp vào cây danh mục 3 cấp để duyệt sản phẩm. Tại trang danh sách, khách sử dụng bộ lọc nâng cao (lọc theo khoảng giá, màu sắc, thương hiệu) để thu hẹp kết quả. Khi tìm thấy sản phẩm ưng ý, khách nhấp vào để xem Chi tiết sản phẩm (đọc mô tả, xem hình ảnh thực tế, xem đánh giá 1-5 sao từ người dùng trước) hoặc đọc các bài viết/tin tức liên quan đến gian hàng đó để tăng độ tin cậy. Khi khách quyết định mua hàng và thực hiện hành động nhấn nút "Thêm vào giỏ hàng" (Add to Cart), "Thêm vào Wishlist", hoặc "Chat với AI Chatbot", hệ thống Spring Security ở Backend và React Router ở Frontend sẽ chặn thao tác này và tự động bật Pop-up / chuyển hướng (Redirect) khách sang Màn hình Đăng nhập / Đăng ký. Tại đây, khách vãng lai bắt buộc phải nhập Email/SĐT và xác thực mã OTP. Sau khi nhập OTP thành công, hệ thống cấp JWT Token, Khách vãng lai chính thức chuyển đổi trạng thái thành Khách hàng (Customer) và được tiếp tục quy trình mua sắm, thanh toán bị gián đoạn trước đó.
+| Bước | Mô tả |
+|---|---|
+| 1 | Khách vãng lai truy cập nền tảng qua trình duyệt web (từ link chia sẻ, tìm kiếm Google hoặc nhập URL trực tiếp). |
+| 2 | Hệ thống hiển thị **Trang chủ** (Homepage) với Banner quảng cáo, chương trình Khuyến mãi (Deals) và Danh mục nổi bật — **không yêu cầu đăng nhập**. |
+| 3 | Khách tự do duyệt sản phẩm bằng thanh tìm kiếm hoặc cây danh mục 3 cấp. Sử dụng bộ lọc nâng cao (khoảng giá, màu sắc, thương hiệu) để thu hẹp kết quả. |
+| 4 | Khách nhấp vào sản phẩm để xem **Chi tiết** (mô tả, hình ảnh, đánh giá 1–5 sao, sản phẩm liên quan). |
+| 5 | Khi khách nhấn **"Thêm vào giỏ"**, **"Wishlist"** hoặc **"Chat AI"**, hệ thống chặn thao tác và chuyển hướng sang màn hình **Đăng nhập / Đăng ký**. |
+| 6 | Khách nhập Email, xác thực mã **OTP** → Hệ thống cấp **JWT Token** → Khách vãng lai chính thức trở thành **Khách hàng (Customer)**. |
+| 7 | Hệ thống cho phép tiếp tục quy trình mua sắm bị gián đoạn trước đó. |
 
 #### Quy trình khách hàng mua sắm trực tuyến
 
-Quy trình khách hàng mua sắm diễn ra theo các bước sau: Đầu tiên, khách hàng truy cập vào nền tảng và tìm kiếm sản phẩm thông qua thanh tìm kiếm, bộ lọc nâng cao (theo mức giá, màu sắc, % giảm giá) hoặc nhận tư vấn trực tiếp từ AI Chatbot. Khi chọn được sản phẩm ưng ý, khách chọn biến thể (size, màu sắc) và thêm vào giỏ hàng hoặc đưa vào danh sách yêu thích (Wishlist) để mua sau. Tại bước thanh toán, do đặc thù đa nhà cung cấp, hệ thống sẽ tự động tách giỏ hàng thành các đơn hàng phụ tương ứng với từng người bán. Khách hàng tiến hành nhập mã giảm giá (nếu có) có thể tích chọn sử dụng "Xu tích lũy" từ ví tài khoản để trừ trực tiếp vào tổng số tiền phải trả. Hệ thống sẽ tự động tính toán lại số tiền cuối cùng. Thanh toán một lần duy nhất thông qua các cổng thanh toán trực tuyến an toàn như VnPay, SePay hoặc Momo. Cuối cùng, hệ thống ghi nhận giao dịch thành công và chuyển thông tin đơn hàng đến các gian hàng tương ứng.
+| Bước | Mô tả |
+|---|---|
+| 1 | Khách hàng tìm kiếm sản phẩm qua thanh tìm kiếm, bộ lọc nâng cao hoặc nhận tư vấn từ **AI Chatbot**. |
+| 2 | Chọn biến thể (size, màu sắc) → Nhấn **"Thêm vào giỏ hàng"** hoặc lưu vào **Wishlist** để mua sau. |
+| 3 | Tại bước **Checkout**, hệ thống tự động **tách giỏ hàng** (Split Order) thành các đơn hàng phụ tương ứng với từng Seller. |
+| 4 | Hệ thống **Voucher Engine** tự động quét và áp dụng mã giảm giá (Coupon) mang lại chiết khấu cao nhất. |
+| 5 | *(Tùy chọn)* Khách hàng nhập số **Xu tích lũy** để trừ trực tiếp vào tổng tiền. |
+| 6 | Hệ thống tính toán **Final Payment** = Tổng tiền hàng − Coupon − Xu + Phí vận chuyển. |
+| 7 | Khách nhấn **"Xác nhận và Thanh toán"** → Thanh toán qua cổng VnPay/SePay/Momo (hoặc chọn COD). |
+| 8 | Hệ thống ghi nhận giao dịch thành công, trừ kho, xóa giỏ hàng và gửi thông báo đến các gian hàng tương ứng. |
 
 #### Quy trình khách hàng tra cứu đơn hàng và tương tác
 
-Để theo dõi đơn hàng, khách hàng đăng nhập vào hệ thống và chọn chức năng “Đơn hàng của tôi” (My Orders). Tại đây, họ có thể xem trạng thái hiện tại của đơn hàng, bao gồm các bước: Đã đặt (Placed), Đã xác nhận (Confirmed), Đang giao (Shipped) và Đã giao (Delivered). Điểm đặc biệt của hệ thống là khách hàng có thể mở giao diện AI Chatbot và hỏi trực tiếp bằng ngôn ngữ tự nhiên (ví dụ: "Tôi có bao nhiêu đơn hàng đã giao?") để tra cứu trạng thái đơn hàng hoặc chi tiết giỏ hàng nhanh chóng. Khi đơn hàng hoàn tất, hệ thống tự động kích hoạt tiến trình cộng Xu thưởng vào ví của khách hàng dựa trên tổng giá trị thanh toán của đơn hàng đó. Khách hàng có thể kiểm tra biến động số dư Xu tại màn hình Quản lý tài khoản cá nhân. Khách hàng có thể đánh giá (từ 1-5 sao) và đính kèm hình ảnh thực tế của sản phẩm. Nếu không vừa ý với món hàng, khách hàng có thể yêu cầu hoàn tiền, trả hàng với lý do hợp lý và tuân thủ đúng chính sách của sàn.
+| Bước | Mô tả |
+|---|---|
+| 1 | Khách hàng đăng nhập → chọn **"Đơn hàng của tôi"** (My Orders). |
+| 2 | Hệ thống hiển thị danh sách đơn hàng với thanh tiến trình (Order Stepper): **Placed → Confirmed → Shipped → Delivered**. |
+| 3 | *(Tùy chọn)* Khách mở **Chatbot AI** và hỏi bằng ngôn ngữ tự nhiên (VD: *"Đơn hàng của tôi đâu?"*) để tra cứu nhanh. |
+| 4 | Khi đơn hàng **DELIVERED**, hệ thống tự động cộng **Xu thưởng** vào ví khách hàng dựa trên giá trị thanh toán. |
+| 5 | Khách hàng có thể **đánh giá** sản phẩm (1–5 sao, kèm ảnh thực tế). |
+| 6 | Nếu không hài lòng, khách có thể gửi **yêu cầu trả hàng/hoàn tiền** (trong vòng 7 ngày). |
 
 #### Quy trình quản lý gian hàng và sản phẩm (Dành cho Người bán)
 
-Người bán (Seller) sau khi được cấp tài khoản sẽ đăng nhập vào hệ thống bảng điều khiển riêng (Seller Dashboard). Họ thực hiện các thao tác quản lý kho hàng bao gồm: thêm mới, chỉnh sửa hoặc xóa sản phẩm. Các thông tin cần cung cấp gồm có tên, mô tả, giá gốc (MRP), giá bán thực tế, số lượng tồn kho và tải hình ảnh lên hệ thống (thông qua Cloudinary). Khi có sự thay đổi về giá gốc và giá bán, hệ thống tự động tính toán phần trăm giảm giá để hiển thị. Ngoài ra, người bán cũng có trách nhiệm tiếp nhận đơn hàng từ khách và cập nhật trạng thái xử lý đơn (từ Chờ xử lý đến Đã giao hàng).
+| Bước | Mô tả |
+|---|---|
+| 1 | Người bán đăng nhập vào **Seller Dashboard**. |
+| 2 | Thêm mới, chỉnh sửa hoặc xóa sản phẩm. Thông tin bao gồm: tên, mô tả, giá gốc (MRP), giá bán thực tế, tồn kho, hình ảnh (tải qua **Cloudinary**). |
+| 3 | Hệ thống tự động tính toán **% giảm giá** khi có sự thay đổi giữa MRP và Selling Price. |
+| 4 | Sản phẩm mới ở trạng thái **Chờ duyệt** (Pending) → Admin kiểm duyệt trước khi hiển thị công khai. |
+| 5 | Tiếp nhận đơn hàng → Xác nhận (Confirmed) → Đẩy đơn vận chuyển qua API **GHTK/Grab** → In phiếu giao hàng PDF. |
 
 #### Quy trình kiểm duyệt và quản trị nền tảng (Dành cho Admin)
 
-Quản trị viên (Admin) nắm quyền kiểm soát toàn bộ nền tảng thông qua Bảng điều khiển quản trị. Khi một người bán mới đăng ký, tài khoản sẽ ở trạng thái chờ duyệt (Pending Verification). Admin sẽ kiểm tra hồ sơ và thực hiện phê duyệt (Active), hoặc có thể đình chỉ (Suspend), cấm vĩnh viễn (Ban) đối với các tài khoản vi phạm chính sách. Bên cạnh quản lý người dùng, Admin thực hiện việc tùy chỉnh giao diện trang chủ, thay đổi lưới danh mục, banner, và phát hành các mã giảm giá (Coupon), chương trình khuyến mãi (Deals) cho toàn bộ hệ thống.
+| Bước | Mô tả |
+|---|---|
+| 1 | Admin truy cập **Admin Dashboard**. |
+| 2 | Kiểm duyệt tài khoản Seller: Xem hồ sơ → **Active** (phê duyệt) / **Suspend** (đình chỉ) / **Ban** (cấm vĩnh viễn). |
+| 3 | Kiểm duyệt sản phẩm mới: Xem thông tin → **Approve** (cho hiển thị) / **Reject** (yêu cầu sửa đổi). |
+| 4 | Tùy chỉnh giao diện **Trang chủ**: cập nhật Banner, cấu hình lưới danh mục nổi bật. |
+| 5 | Phát hành mã giảm giá (**Coupon**) và chương trình khuyến mãi (**Deals**) toàn sàn. |
+| 6 | Cấu hình thông số tài chính: tỷ lệ Xu, hạn mức tiêu Xu, % Phí nền tảng (Platform Fee). |
 
 #### Quy trình thống kê và đối soát doanh thu
 
-Hệ thống tự động tổng hợp và tính toán các chỉ số kinh doanh theo thời gian thực. Từ bảng điều khiển, Người bán có thể xem chi tiết tổng thu nhập, tổng số sản phẩm đã bán, số lượng đơn hàng bị hủy và theo dõi lịch sử dòng tiền (Transactions). Báo cáo doanh thu được xuất ra dưới dạng các biểu đồ trực quan (Earning graphs) theo ngày, tuần hoặc tháng, giúp người bán dễ dàng phân tích tình hình kinh doanh của gian hàng. Đồng thời, dữ liệu này là cơ sở để hệ thống tiến hành đối soát và thanh toán tiền hàng cho Người bán sau khi đơn hàng giao thành công.
+| Bước | Mô tả |
+|---|---|
+| 1 | Hệ thống tự động tổng hợp các chỉ số kinh doanh theo thời gian thực trên **Seller Dashboard**. |
+| 2 | Người bán xem: Tổng thu nhập (Total Earning), Tổng đơn hàng (Total Orders), Đơn bị hủy (Canceled), Tổng hoàn tiền (Total Refund). |
+| 3 | Biểu đồ doanh thu (Earning Graphs) hiển thị theo ngày, tuần hoặc tháng. |
+| 4 | Người bán kết xuất dữ liệu lịch sử giao dịch ra file **Excel (.xlsx)** để đối soát nội bộ. |
+| 5 | Admin thực hiện đối soát: Doanh thu Seller thực nhận = Tổng Selling Price − Phí nền tảng (%) + Bù Xu (nếu có). |
 
 #### Quy trình yêu cầu trả hàng và hoàn tiền (Refund & Return Process)
 
-Quy trình xử lý trả hàng và hoàn tiền được diễn ra chặt chẽ giữa 3 bên nhằm đảm bảo tính công bằng: 
-- Bước 1: Khởi tạo yêu cầu (Khách hàng): Khách hàng đăng nhập, truy cập lịch sử mua hàng và chọn đơn hàng có trạng thái "Đã giao" (Delivered) trong thời hạn cho phép (VD: 7 ngày). Khách hàng chọn chức năng "Yêu cầu trả hàng", điền lý do và tải lên hình ảnh/video minh chứng. Hệ thống chuyển trạng thái đơn sang "Yêu cầu trả hàng" (Return Requested) và tạm thời đóng băng khoản tiền đối soát của đơn hàng này đối với Người bán. 
-- Bước 2: Xử lý yêu cầu (Người bán): Người bán nhận được thông báo trên Seller Dashboard. Xem xét minh chứng của khách hàng.
-  - Trường hợp 2a (Đồng ý): Người bán bấm "Chấp nhận". Khách hàng gửi trả lại hàng. Khi Người bán nhận được hàng sẽ bấm "Xác nhận hoàn tiền". Trạng thái đơn chuyển thành "Đã hoàn tiền" (Refunded).
-  - Trường hợp 2b (Từ chối): Người bán bấm "Từ chối" kèm theo lý do. 
-- Bước 3: Khiếu nại (Khách hàng): Nếu bị Người bán từ chối, Khách hàng có quyền nhấn "Khiếu nại". Đơn hàng chuyển sang trạng thái "Tranh chấp" (Disputed). 
-- Bước 4: Phán quyết (Quản trị viên - Admin): Quản trị viên can thiệp vào các đơn "Disputed", kiểm tra đối chứng dữ liệu từ cả hai bên. Admin đưa ra phán quyết cuối cùng. Nếu Admin duyệt hoàn tiền, hệ thống sẽ tự động kích hoạt API của cổng thanh toán để đẩy tiền về thẻ của khách, đồng thời hệ thống tự động cập nhật biểu đồ thống kê "Total Refund" (Tổng số tiền hoàn) trên Dashboard của Người bán
+Quy trình xử lý trả hàng và hoàn tiền diễn ra chặt chẽ giữa **3 bên** nhằm đảm bảo tính công bằng:
 
-# MÔ HÌNH HÓA YÊU CẦU
+| Bước | Tác nhân | Mô tả |
+|---|---|---|
+| 1 | Khách hàng | Truy cập đơn hàng **DELIVERED** (trong vòng 7 ngày) → Nhấn **"Yêu cầu trả hàng"** → Điền lý do + tải minh chứng (ảnh/video). |
+| 2 | Hệ thống | Chuyển trạng thái → **RETURN_REQUESTED**. Tạm thời **đóng băng** khoản tiền đối soát của đơn hàng. |
+| 3a | Người bán | **Chấp nhận**: Chờ nhận hàng trả lại → Nhấn "Xác nhận hoàn tiền" → Hệ thống gọi **Refund API** → Trạng thái → **REFUNDED**. |
+| 3b | Người bán | **Từ chối**: Bắt buộc ghi rõ lý do từ chối. |
+| 4 | Khách hàng | Nếu bị từ chối → Nhấn **"Khiếu nại"** → Trạng thái → **DISPUTED**. |
+| 5 | Admin | Can thiệp với vai trò **trọng tài**: xem đối chứng dữ liệu từ cả hai bên → Đưa ra **phán quyết cuối cùng**. |
+| 6 | Hệ thống | Nếu Admin duyệt hoàn tiền → Tự động gọi **API cổng thanh toán** → Trả tiền về tài khoản khách → Cập nhật **Total Refund** trên Seller Dashboard. |
+
+
+# PHẦN 3: MÔ HÌNH HÓA YÊU CẦU
 
 ## Nhận diện tác nhân và chức năng trong sơ đồ Use case
 
@@ -783,3 +1018,40 @@ Quy trình xử lý trả hàng và hoàn tiền được diễn ra chặt chẽ
 | Business Rules | \- **BR29-1:** Mật khẩu bắt buộc phải có độ dài tối thiểu 8 ký tự để đảm bảo tiêu chuẩn an toàn. |
 | Non-Functional Requirement | \- **NFR29-1:** Mật khẩu mới tuyệt đối không được lưu dưới dạng văn bản thô (Plain-text). Backend (Spring Boot) bắt buộc phải băm (hash) mật khẩu bằng thuật toán BCrypt trước khi lưu vào Database. |
 
+---
+
+# PHẦN 4: TIÊU CHÍ NGHIỆM THU (Acceptance Criteria)
+
+Hệ thống TKart E-commerce Platform được coi là **đạt yêu cầu nghiệm thu** khi thỏa mãn đồng thời tất cả các tiêu chí dưới đây:
+
+## 4.1 Tiêu chí chức năng
+
+| # | Tiêu chí | Phương pháp kiểm chứng |
+|---|---|---|
+| AC-01 | Tất cả 29 Use Cases (UC01–UC29) hoạt động đúng theo Basic Flow đã mô tả. | Kiểm thử chức năng (Functional Testing) |
+| AC-02 | Các Alternative Flows và Exception Flows xử lý đúng kịch bản đặc tả. | Kiểm thử biên và ngoại lệ |
+| AC-03 | Toàn bộ Business Rules (BR01–BR29) được tuân thủ chính xác trong quá trình vận hành. | Kiểm thử nghiệp vụ |
+| AC-04 | Phân quyền RBAC hoạt động đúng: Guest/Customer/Seller/Admin không truy cập chéo tài nguyên. | Kiểm thử bảo mật phân quyền |
+| AC-05 | Luồng thanh toán (VnPay/SePay/COD) và hoàn tiền (Refund API) xử lý chính xác dòng tiền. | Kiểm thử tích hợp cổng thanh toán |
+| AC-06 | Luồng vận chuyển (GHTK/Grab API + Webhook) tự động cập nhật trạng thái đơn hàng. | Kiểm thử tích hợp vận chuyển |
+
+## 4.2 Tiêu chí phi chức năng
+
+| # | Tiêu chí | Ngưỡng chấp nhận | Phương pháp |
+|---|---|---|---|
+| AC-07 | Tốc độ tải Trang chủ và Trang chi tiết sản phẩm | ≤ 2 giây (NFR01-1) | Đo bằng Lighthouse / DevTools |
+| AC-08 | Thời gian xử lý Voucher Engine | ≤ 1 giây (NFR05-1) | Đo thời gian phản hồi API |
+| AC-09 | Thời gian phản hồi Chatbot AI | ≤ 3 giây (NFR07-1) | Đo thời gian end-to-end |
+| AC-10 | Mật khẩu được mã hóa BCrypt trong Database | 100% tài khoản (NFR27-2) | Kiểm tra trực tiếp DB |
+| AC-11 | JWT Token hết hạn đúng thời gian cấu hình | Đúng theo thiết kế | Kiểm thử bảo mật |
+| AC-12 | Hệ thống hiển thị nhất quán trên Chrome, Safari, Firefox, Edge | Không lỗi giao diện | Kiểm thử tương thích |
+
+## 4.3 Tiêu chí bàn giao
+
+| # | Hạng mục bàn giao | Yêu cầu |
+|---|---|---|
+| D-01 | Mã nguồn (Source Code) | Đầy đủ Front-end (React) + Back-end (Spring Boot), đã build thành công |
+| D-02 | Cơ sở dữ liệu | Script khởi tạo MySQL + dữ liệu mẫu (Seed Data) |
+| D-03 | Tài liệu SRS | Bản cập nhật cuối cùng (requirements_v3_update.md) |
+| D-04 | Sơ đồ UML | Use Case Diagram + 6 Sequence Diagrams (PlantUML) |
+| D-05 | Hướng dẫn triển khai | README.md với hướng dẫn cài đặt và chạy hệ thống |
