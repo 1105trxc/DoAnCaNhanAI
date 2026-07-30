@@ -11,6 +11,8 @@ from functools import partial
 import math
 import sys
 import numpy as np
+from abc import ABC, abstractmethod
+from typing import List, Tuple, Optional, Any
 
 # --- Core Logic ---
 ROWS, COLS = 3, 3
@@ -86,6 +88,218 @@ def is_solvable(state, goal_state):
     blank_row = find_zero(state)[0]
     goal_blank_row = find_zero(goal_state)[0]
     return (inversions % 2 == goal_inversions % 2) and ((blank_row % 2) == (goal_blank_row % 2))
+
+
+# --- Abstract Base Classes (DIP) ---
+
+class SearchAlgorithm(ABC):
+    """Abstract base class for all search algorithms following DIP."""
+    
+    @abstractmethod
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        """
+        Execute the search algorithm.
+        
+        Returns:
+            Tuple of (solution_path, time_taken, nodes_visited)
+        """
+        pass
+    
+    def get_name(self) -> str:
+        """Return the name of the algorithm."""
+        return self.__class__.__name__
+
+
+class StateSpaceSearchAlgorithm(SearchAlgorithm):
+    """Base class for state space search algorithms."""
+    
+    def __init__(self):
+        self.start_time = 0
+        self.nodes_visited = 0
+
+
+class BeliefSpaceSearchAlgorithm(SearchAlgorithm):
+    """Base class for belief space search algorithms."""
+    
+    def __init__(self):
+        self.start_time = 0
+        self.belief_states_visited = 0
+
+
+class LocalSearchAlgorithm(SearchAlgorithm):
+    """Base class for local search algorithms."""
+    
+    def __init__(self):
+        self.start_time = 0
+        self.nodes_evaluated = 0
+
+
+class CSPAlgorithm(SearchAlgorithm):
+    """Base class for Constraint Satisfaction Problem algorithms."""
+    
+    def __init__(self):
+        self.start_time = 0
+        self.states_explored = 0
+
+
+class ReinforcementLearningAlgorithm(SearchAlgorithm):
+    """Base class for Reinforcement Learning algorithms."""
+    
+    def __init__(self):
+        self.start_time = 0
+        self.q_table_size = 0
+
+
+# --- Concrete Algorithm Implementations (DIP) ---
+
+class DFSAlgorithm(StateSpaceSearchAlgorithm):
+    """Depth-First Search implementation."""
+    
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        print("Running DFS (State Space)...")
+        stack = [(start_state, [])]
+        visited = {state_to_tuple(start_state)}
+        self.nodes_visited = 0
+        self.start_time = time.time()
+        
+        while stack:
+            state, path = stack.pop()
+            self.nodes_visited += 1
+            if state == goal_state:
+                print(f"DFS: Solution found of length {len(path)}.")
+                return path + [state], time.time() - self.start_time, self.nodes_visited
+            for neighbor, _ in reversed(get_neighbors(state)):
+                neighbor_tuple = state_to_tuple(neighbor)
+                if neighbor_tuple not in visited:
+                    visited.add(neighbor_tuple)
+                    stack.append((neighbor, path + [state]))
+        
+        print("DFS: Failed to find a solution.")
+        return None, time.time() - self.start_time, self.nodes_visited
+
+
+class BFSAlgorithm(StateSpaceSearchAlgorithm):
+    """Breadth-First Search implementation."""
+    
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        print("Running BFS (State Space)...")
+        queue = deque([(start_state, [])])
+        visited = {state_to_tuple(start_state)}
+        self.nodes_visited = 0
+        self.start_time = time.time()
+        
+        while queue:
+            state, path = queue.popleft()
+            self.nodes_visited += 1
+            if state == goal_state:
+                print(f"BFS: Solution found of length {len(path)}.")
+                return path + [state], time.time() - self.start_time, self.nodes_visited
+            for neighbor, _ in get_neighbors(state):
+                neighbor_tuple = state_to_tuple(neighbor)
+                if neighbor_tuple not in visited:
+                    visited.add(neighbor_tuple)
+                    queue.append((neighbor, path + [state]))
+        
+        print("BFS: Failed to find a solution.")
+        return None, time.time() - self.start_time, self.nodes_visited
+
+
+class UCSAlgorithm(StateSpaceSearchAlgorithm):
+    """Uniform Cost Search implementation."""
+    
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        print("Running UCS (State Space)...")
+        pq = [(0, start_state, [])]
+        visited_costs = {state_to_tuple(start_state): 0}
+        self.nodes_visited = 0
+        self.start_time = time.time()
+        
+        while pq:
+            cost, state, path = heapq.heappop(pq)
+            self.nodes_visited += 1
+            state_tuple = state_to_tuple(state)
+            
+            if cost > visited_costs.get(state_tuple, float('inf')):
+                continue
+            
+            if state == goal_state:
+                print(f"UCS: Solution found of length {len(path)}.")
+                return path + [state], time.time() - self.start_time, self.nodes_visited
+            
+            for neighbor, step_cost in get_neighbors(state):
+                new_cost = cost + step_cost
+                neighbor_tuple = state_to_tuple(neighbor)
+                if new_cost < visited_costs.get(neighbor_tuple, float('inf')):
+                    visited_costs[neighbor_tuple] = new_cost
+                    heapq.heappush(pq, (new_cost, neighbor, path + [state]))
+        
+        print("UCS: Failed to find a solution.")
+        return None, time.time() - self.start_time, self.nodes_visited
+
+
+class AStarAlgorithm(StateSpaceSearchAlgorithm):
+    """A* Search implementation."""
+    
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        print("Running A* (State Space)...")
+        start_h = heuristic(start_state, goal_state)
+        pq = [(start_h, 0, start_state, [])]
+        g_costs = {state_to_tuple(start_state): 0}
+        self.nodes_visited = 0
+        self.start_time = time.time()
+        
+        while pq:
+            f_cost, g_cost, state, path = heapq.heappop(pq)
+            self.nodes_visited += 1
+            state_tuple = state_to_tuple(state)
+            
+            if g_cost > g_costs.get(state_tuple, float('inf')):
+                continue
+            
+            if state == goal_state:
+                print(f"A*: Solution found of length {len(path)}.")
+                return path + [state], time.time() - self.start_time, self.nodes_visited
+            
+            for neighbor, step_cost in get_neighbors(state):
+                new_g_cost = g_cost + step_cost
+                neighbor_tuple = state_to_tuple(neighbor)
+                if new_g_cost < g_costs.get(neighbor_tuple, float('inf')):
+                    g_costs[neighbor_tuple] = new_g_cost
+                    new_h_cost = heuristic(neighbor, goal_state)
+                    new_f_cost = new_g_cost + new_h_cost
+                    heapq.heappush(pq, (new_f_cost, new_g_cost, neighbor, path + [state]))
+        
+        print("A*: Failed to find a solution.")
+        return None, time.time() - self.start_time, self.nodes_visited
+
+
+class GreedyBestFirstAlgorithm(StateSpaceSearchAlgorithm):
+    """Greedy Best-First Search implementation."""
+    
+    def search(self, start_state: Any, goal_state: Any) -> Tuple[Optional[Any], float, int]:
+        print("Running Greedy Best-First Search (State Space)...")
+        pq = [(heuristic(start_state, goal_state), start_state, [])]
+        visited = {state_to_tuple(start_state)}
+        self.nodes_visited = 0
+        self.start_time = time.time()
+        
+        while pq:
+            _, state, path = heapq.heappop(pq)
+            self.nodes_visited += 1
+            
+            if state == goal_state:
+                print(f"Greedy: Solution found of length {len(path)}.")
+                return path + [state], time.time() - self.start_time, self.nodes_visited
+            
+            for neighbor, _ in get_neighbors(state):
+                neighbor_tuple = state_to_tuple(neighbor)
+                if neighbor_tuple not in visited:
+                    visited.add(neighbor_tuple)
+                    heapq.heappush(pq, (heuristic(neighbor, goal_state), neighbor, path + [state]))
+        
+        print("Greedy: Failed to find a solution.")
+        return None, time.time() - self.start_time, self.nodes_visited
+
 
 def generate_initial_belief_set(start_state):
     initial_belief_state_tuples = {
@@ -1406,27 +1620,28 @@ class PuzzleGUI:
                         "GA", "Backtracking", "AC3", "G&T", "Q-Learning"]
         beam_width_default = 5
 
+        # Algorithm instances using DIP
         algo_map = {
-            "DFS": dfs,
-            "BFS": bfs,
-            "UCS": ucs,
-            "A*": a_star,
-            "Greedy": greedy_best_first,
-            "IDS": ids,
-            "IDA*": ida_star,
-            "SimpleHC": simple_hill_climbing,
-            "SteepestHC": steepest_ascent_hill_climbing,
-            "StochasticHC": stochastic_hill_climbing,
-            "SA": simulated_annealing,
-            "Beam": partial(beam_search, beam_width=beam_width_default),
-            "AOSerach": partial(and_or_search, get_successors=get_successors),
-            "Sensorless": bfs_belief_search,
-            "POsearch": bfs_partially_observable_search,
-            "GA": genetic_algorithm,
-            "Backtracking": backtracking_csp_solve,
-            "AC3": ac3_csp_solve,
-            "G&T": generate_and_test,
-            "Q-Learning": q_learning
+            "DFS": DFSAlgorithm(),
+            "BFS": BFSAlgorithm(),
+            "UCS": UCSAlgorithm(),
+            "A*": AStarAlgorithm(),
+            "Greedy": GreedyBestFirstAlgorithm(),
+            "IDS": ids,  # Will be refactored
+            "IDA*": ida_star,  # Will be refactored
+            "SimpleHC": simple_hill_climbing,  # Will be refactored
+            "SteepestHC": steepest_ascent_hill_climbing,  # Will be refactored
+            "StochasticHC": stochastic_hill_climbing,  # Will be refactored
+            "SA": simulated_annealing,  # Will be refactored
+            "Beam": partial(beam_search, beam_width=beam_width_default),  # Will be refactored
+            "AOSerach": partial(and_or_search, get_successors=get_successors),  # Will be refactored
+            "Sensorless": bfs_belief_search,  # Will be refactored
+            "POsearch": bfs_partially_observable_search,  # Will be refactored
+            "GA": genetic_algorithm,  # Will be refactored
+            "Backtracking": backtracking_csp_solve,  # Will be refactored
+            "AC3": ac3_csp_solve,  # Will be refactored
+            "G&T": generate_and_test,  # Will be refactored
+            "Q-Learning": q_learning  # Will be refactored
         }
 
         button_container = tk.Frame(algo_frame, bg=self.BG_COLOR)
@@ -1591,7 +1806,12 @@ class PuzzleGUI:
         def target():
             start_time = time.time()
             try:
-                result = algorithm_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                # Check if algorithm_func is a SearchAlgorithm instance (DIP)
+                if isinstance(algorithm_func, SearchAlgorithm):
+                    result = algorithm_func.search(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
+                else:
+                    # Legacy function-based algorithm
+                    result = algorithm_func(copy.deepcopy(current_start_state), copy.deepcopy(current_goal_state))
                 self.master.after(0, self._handle_algorithm_result, result, algo_name, time.time() - start_time)
             except Exception as e:
                 import traceback
